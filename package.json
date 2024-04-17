@@ -1,0 +1,30 @@
+{
+  "name": "looter-app",
+  "description": "App to note game items, loot, and reminders, ensuring players never forget in-game progress.",
+  "author": "Kananek T. <info.dvgamer@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=20.12.1"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build && electron-builder",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.4.23"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.9",
+    "vite-plugin-electron": "^0.28.4",
+    "vite-plugin-electron-renderer": "^0.14.5",
+    "vue-tsc": "^2.0.13"
+  },
+  "main": "dist-electron/main.js"
+}
