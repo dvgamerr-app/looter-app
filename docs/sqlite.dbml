@@ -1,0 +1,33 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+Table Game [headercolor: #4B82B0] {
+  Id int16 [primary key]
+  Name varchar
+}
+
+Table Item [headercolor: #4B82B0] {
+  Id int16 [primary key]
+  GameId int16
+  Name varchar [not null]
+  Image blob
+  Own int [not null, default: 0]
+  Loot boolean [default: true]
+}
+
+Table ItemCraft [headercolor: #011B4E] {
+  CraftId int16
+  ItemId int16
+  Qty int [not null, default: 1]
+}
+
+Table Recipe [headercolor: #011B4E] {
+  ItemId int16
+  Qty int [not null, default: 1]
+  Done boolean [default: false]
+}
+
+Ref: Item.GameId > Game.Id
+Ref: ItemCraft.CraftId > Item.Id
+Ref: ItemCraft.ItemId > Item.Id
+Ref: Recipe.ItemId > Item.Id
