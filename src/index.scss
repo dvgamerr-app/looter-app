@@ -1,7 +1,6 @@
 @import url('./fonts.scss');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
 :root {
   font-size: 0.85rem;
