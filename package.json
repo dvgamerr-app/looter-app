@@ -20,9 +20,9 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.4",
     "autoprefixer": "^10.5.4",
-    "electron": "^35.7.5",
-    "electron-builder": "^26.15.3",
-    "electron-builder-squirrel-windows": "26.15.3",
+    "electron": "44.7.0",
+    "electron-builder": "26.17.0",
+    "electron-builder-squirrel-windows": "26.17.0",
     "jsonpath-plus": "^10.4.0",
     "postcss": "^8.5.25",
     "sass": "^1.102.0",
