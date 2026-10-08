@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Lists from './components/Lists.vue'
+import MaterialList from './components/MaterialList.vue'
 </script>
 
 <template>
@@ -8,7 +8,7 @@ import Lists from './components/Lists.vue'
       <span class="self-center whitespace-nowrap pl-2 font-semibold dark:text-white">GameLooter</span>
     </div>
   </nav>
-  <Lists class="desktop" />
+  <MaterialList class="desktop" />
 </template>
 
 <style scoped>

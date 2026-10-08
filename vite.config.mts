@@ -12,12 +12,11 @@ export default defineConfig({
     electron({
       main: {
         // Shortcut of `build.lib.entry`.
-        entry: 'electron/main.js',
+        entry: 'electron/main.ts',
       },
       preload: {
-        // Shortcut of `build.rolldownOptions.input`.
-        // Preload scripts may contain Web assets, so use the `build.rolldownOptions.input` instead `build.lib.entry`.
-        input: path.join(import.meta.dirname, 'electron/preload/index.js'),
+        // Shortcut of `build.rolldownOptions.input`. Emitted as dist-electron/preload.js.
+        input: path.join(import.meta.dirname, 'electron/preload.ts'),
       },
       // The renderer never uses Node.js APIs: it talks to the main process through the preload bridge only.
     }),
