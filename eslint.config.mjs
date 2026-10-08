@@ -20,7 +20,6 @@ export default withVueTs(
       'electron/database/**',
       'electron/settings/**',
       'electron/helper.js',
-      'electron/config.js',
     ],
   },
   js.configs.recommended,
