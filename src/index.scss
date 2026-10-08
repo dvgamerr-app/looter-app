@@ -5,36 +5,19 @@
 
 :root {
   font-size: 0.85rem;
-//   --system-titleBar-height: 31px;
-//   font-family: 'Roboto', Tahoma, Geneva, Verdana, sans-serif;
-//   line-height: 1.5;
-//   font-weight: 400;
-
-//   color-scheme: light dark;
-//   color: rgba(255, 255, 255, 0.87);
-//   background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   user-select: none;
 }
-button, a {
+button,
+a {
   -webkit-app-region: no-drag;
   user-select: none;
 }
-body {
-  // font-weight: 400;
-  // display: grid;
-  // height: calc(100vh - 16px);
-  
-  // &.inactive {
-  //   #app > .title .bar {
-  //     background-color: var(--user-titlebar-background);
-  //   }
-  // }
 
+body {
   #app {
     display: grid;
     grid-template-areas:
@@ -47,7 +30,6 @@ body {
     outline: none !important;
   }
 
-  // ScrollBar
   ::-webkit-scrollbar {
     width: 5px;
     height: 8px;
@@ -58,11 +40,6 @@ body {
     border-radius: 5px;
   }
 
-  .overview-view::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
   @media only screen and (max-width: 600px) {
     ::-webkit-scrollbar {
       width: 5px;
@@ -70,23 +47,4 @@ body {
     }
   }
 
-  @media only screen and (max-width: 1024px) {
-    .table-view::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
-    }
-  }
-
-  @media only screen and (max-width: 1024px) {
-    .overview-view::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
-    }
-  }
-
-  .virtual-scrollbar-wrapper {
-    overflow-y: auto;
-    overflow-anchor: none;
-    -webkit-overflow-scrolling: touch;
-  }
 }

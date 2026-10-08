@@ -1,65 +1,40 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-
-defineProps<{ msg: string }>()
-
-const count = ref(0)
+const items = [
+  { id: 'todo1', title: 'Finish project proposal', detail: 'Due on 4/1/23' },
+  { id: 'todo2', title: 'Buy groceries', detail: 'Bananas, milk, bread' },
+  { id: 'todo3', title: 'Go for a run', detail: '3 miles' },
+]
 </script>
 
 <template>
-  <div class="overflow-hidden mt-6">
-    <div class="px-4 py-2">
-      <h1 class="text-gray-800 font-bold text-2xl uppercase">Material</h1>
-    </div>
-    <form class="w-full mx-auto px-4 py-2">
-      <div class="flex items-center border-b-2 border-teal-500 py-2">
-        <input
-          class="appearance-none bg-transparent border-none w-full text-gray-700 mr-3 py-1 px-2 leading-tight focus:outline-none"
-          type="text" placeholder="Add a task">
-        <button
-          class="flex-shrink-0 bg-teal-500 hover:bg-teal-700 border-teal-500 hover:border-teal-700 text-sm border-4 text-white py-1 px-2 rounded"
-          type="button">
-          Add
-        </button>
-      </div>
+  <section class="mt-6 overflow-hidden">
+    <h1 class="px-4 py-2 text-2xl font-bold uppercase text-gray-800">Material</h1>
+    <form class="mx-auto flex w-full items-center border-b-2 border-teal-500 px-4 py-4">
+      <input
+        class="mr-3 w-full appearance-none border-none bg-transparent px-2 py-1 leading-tight text-gray-700 focus:outline-none"
+        type="text"
+        placeholder="Add a task"
+      >
+      <button
+        class="flex-shrink-0 rounded border-4 border-teal-500 bg-teal-500 px-2 py-1 text-sm text-white hover:border-teal-700 hover:bg-teal-700"
+        type="button"
+      >
+        Add
+      </button>
     </form>
     <ul class="divide-y divide-gray-200 px-4">
-      <li class="py-4">
-        <div class="flex items-center">
-          <input id="todo1" name="todo1" type="checkbox"
-            class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded">
-          <label for="todo1" class="ml-3 block text-gray-900">
-            <span class="text-lg font-medium">Finish project proposal</span>
-            <span class="text-sm font-light text-gray-500">Due on 4/1/23</span>
-          </label>
-        </div>
-      </li>
-      <li class="py-4">
-        <div class="flex items-center">
-          <input id="todo2" name="todo2" type="checkbox"
-            class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded">
-          <label for="todo2" class="ml-3 block text-gray-900">
-            <span class="text-lg font-medium">Buy groceries</span>
-            <span class="text-sm font-light text-gray-500">Bananas, milk, bread</span>
-          </label>
-        </div>
-      </li>
-      <li class="py-4">
-        <div class="flex items-center">
-          <input id="todo3" name="todo3" type="checkbox"
-            class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded">
-          <label for="todo3" class="ml-3 block text-gray-900">
-            <span class="text-lg font-medium">Go for a run</span>
-            <span class="text-sm font-light text-gray-500">3 miles</span>
-          </label>
-        </div>
+      <li v-for="item in items" :key="item.id" class="flex items-center py-4">
+        <input
+          :id="item.id"
+          :name="item.id"
+          type="checkbox"
+          class="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+        >
+        <label :for="item.id" class="ml-3 block text-gray-900">
+          <span class="text-lg font-medium">{{ item.title }}</span>
+          <span class="text-sm font-light text-gray-500">{{ item.detail }}</span>
+        </label>
       </li>
     </ul>
-  </div>
+  </section>
 </template>
-
-<style scoped>
-.read-the-docs {
-  color: #888;
-}
-</style>
