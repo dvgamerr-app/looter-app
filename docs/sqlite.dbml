@@ -1,33 +1,209 @@
-// Use DBML to define your database structure
-// Docs: https://dbml.dbdiagram.io/docs
+// GameLooter SQLite schema (DBML)
+// ตรงกับ docs/04-data-model.md ส่วนที่ 3 (Migration 001-initial) อัปเดตล่าสุด: 2026-10-08
+// DBML docs: https://dbml.dbdiagram.io/docs
+//
+// หมายเหตุการอ่าน:
+// - SQLite ไม่มีชนิด Enum: ทุกคอลัมน์ที่ใช้ Enum ในไฟล์นี้คือ TEXT + CHECK constraint (ระบุไว้ใน note ของคอลัมน์)
+// - Boolean เก็บเป็น INTEGER 0/1, Timestamp เป็น TEXT ISO-8601 UTC (เช่น 2026-10-08T09:30:00.000Z) ที่ Repository กำหนดเอง ไม่ใช้ DEFAULT ของ Database
+// - Schema version เก็บใน PRAGMA user_version (ไม่มีตาราง) และเปลี่ยนด้วย electron/database/migrations/NNN-name.ts
+// - ทุก Connection เปิด PRAGMA journal_mode = WAL และ PRAGMA foreign_keys = ON
+// - Path ของภาพเป็น Path สัมพัทธ์กับ <userData>/data และใช้ / เป็นตัวคั่นเสมอ
 
-Table Game [headercolor: #4B82B0] {
-  Id int16 [primary key]
-  Name varchar
+Project gamelooter {
+  database_type: 'SQLite'
+  Note: '''
+    Primary storage ของ GameLooter: ไฟล์ <userData>/data/gamelooter.sqlite เปิดผ่าน better-sqlite3 13 ใน Main Process เท่านั้น
+    Renderer เข้าถึงข้อมูลผ่าน Typed IPC (window.api.*) ไม่มีการเปิด Database จาก Renderer
+    Required / Owned / Missing / Craft plan ไม่ถูกเก็บในตารางใด คำนวณใหม่ทุกครั้งตาม docs/04-data-model.md ส่วนที่ 7
+    กฎการลบ: ลบ game_profile แล้ว CASCADE ทุกอย่าง; ลบ item ถูกปฏิเสธ (RESTRICT) ขณะถูกอ้างโดย recipe_ingredient หรือ quest_requirement
+  '''
 }
 
-Table Item [headercolor: #4B82B0] {
-  Id int16 [primary key]
-  GameId int16
-  Name varchar [not null]
-  Image blob
-  Own int [not null, default: 0]
-  Loot boolean [default: true]
+Enum item_category {
+  material
+  equipment
+  consumable
+  quest
+  other
 }
 
-Table ItemCraft [headercolor: #011B4E] {
-  CraftId int16
-  ItemId int16
-  Qty int [not null, default: 1]
+Enum requirement_mode {
+  craft [note: 'ขยายผ่าน Recipe ของ Item ถ้ามี ไม่มีก็ทำตัวเหมือน gather']
+  gather [note: 'นับเป็นวัตถุดิบดิบเสมอ แม้ Item มี Recipe']
 }
 
-Table Recipe [headercolor: #011B4E] {
-  ItemId int16
-  Qty int [not null, default: 1]
-  Done boolean [default: false]
+Enum quest_status {
+  active
+  paused
+  completed
 }
 
-Ref: Item.GameId > Game.Id
-Ref: ItemCraft.CraftId > Item.Id
-Ref: ItemCraft.ItemId > Item.Id
-Ref: Recipe.ItemId > Item.Id
+Enum target_kind {
+  quest
+  recipe
+}
+
+Table game_profile [headercolor: #4B82B0] {
+  id integer [pk, increment, note: 'AUTOINCREMENT: รหัสไม่ถูกนำกลับมาใช้ซ้ำ เพราะ app_setting.active_profile_id และชื่อโฟลเดอร์ภาพอ้างถึง']
+  name text [not null, unique, note: 'UNIQUE COLLATE NOCASE; Repository trim ช่องว่างหัวท้ายก่อนบันทึก']
+  icon_path text [null, note: 'images/<profile_id>/profile-icon.png หรือ NULL (Phase 1 เป็น NULL เสมอ)']
+  created_at text [not null, note: 'ISO-8601 UTC']
+  updated_at text [not null, note: 'เปลี่ยนเมื่อเปลี่ยนชื่อ/ไอคอน']
+  last_opened_at text [null, note: 'เวลาที่ถูกเลือกเป็น Active Profile ล่าสุด ใช้เรียง Profile Cards']
+
+  Note: 'หนึ่งแถวต่อหนึ่งเกม ข้อมูลทั้งหมดของเกมผูกกับแถวนี้ (Requirement 3.1) ลบแล้ว CASCADE ทุกตารางลูก และ Main ลบโฟลเดอร์ images/<profile_id>/ หลัง Commit'
+}
+
+Table item [headercolor: #4B82B0] {
+  id integer [pk, increment, note: 'Item ID หนึ่งเดียวต่อ Item ภายใน Profile ชื่อไฟล์ภาพใช้ค่านี้']
+  profile_id integer [not null, note: 'Profile เจ้าของ']
+  name text [not null, note: 'ชื่อที่แสดงผล; Iron Ore และ iron ore ถือเป็น Item เดียวกัน']
+  category item_category [not null, default: 'material', note: "TEXT CHECK (category IN ('material','equipment','consumable','quest','other'))"]
+  image_path text [null, note: 'images/<profile_id>/<item_id>.png (PNG ต้นฉบับที่ Crop แล้ว)']
+  thumbnail_path text [null, note: 'images/<profile_id>/thumbs/<item_id>.png (64x64 PNG) เป็น NULL หรือมีค่าคู่กับ image_path เสมอ']
+  notes text [null]
+  pinned integer [not null, default: 0, note: '1 = แสดงใน Overlay เสมอ']
+  created_at text [not null]
+  updated_at text [not null, note: 'เปลี่ยนเมื่อแก้ชื่อ หมวดหมู่ ภาพ โน้ต หรือ Pin; ใช้เป็น Cache-busting ของภาพ']
+
+  indexes {
+    (profile_id, name) [unique, name: 'sqlite_autoindex_item_1', note: 'UNIQUE (profile_id, name COLLATE NOCASE) = Item ID เดียวต่อชื่อต่อ Profile (Requirement 5) และทำหน้าที่ Index item(profile_id, name)']
+  }
+
+  Note: 'ตัวตนเดียวของ Item ภายใน Profile; Recipe, Quest, Inventory และ Overlay อ้างถึง item.id ไม่ใช่ชื่อ'
+}
+
+Table inventory [headercolor: #4B82B0] {
+  item_id integer [pk, note: '1:1 กับ item; แถวถูกสร้างพร้อม Item (owned = 0) หรือแบบ Lazy ตอนปรับจำนวนครั้งแรก']
+  owned integer [not null, default: 0, note: 'CHECK (owned >= 0) จำนวนที่มีจริง (Manual Tracking ตาม Requirement 3.6)']
+  updated_at text [not null, note: 'เวลาปรับจำนวนล่าสุด']
+
+  Note: 'จำนวนที่ผู้ใช้มีจริงต่อ Item แยกจากนิยาม Item การอ่านใช้ LEFT JOIN + COALESCE(owned, 0) เสมอ'
+}
+
+Table recipe [headercolor: #011B4E] {
+  id integer [pk, increment]
+  profile_id integer [not null, note: 'ต้องเท่ากับ item.profile_id ของ output_item_id (Repository ตรวจ)']
+  output_item_id integer [not null, unique, note: 'หนึ่ง Recipe ต่อ Output Item เพื่อให้ Nested Expansion ไม่กำกวม (Recipe variants เป็น Migration ในอนาคต)']
+  output_qty integer [not null, default: 1, note: 'CHECK (output_qty > 0) จำนวน Output ต่อการ Craft หนึ่งครั้ง']
+  station text [null, note: 'ชื่อ Crafting Station (ข้อความอิสระ)']
+  notes text [null]
+  created_at text [not null]
+  updated_at text [not null, note: 'เปลี่ยนเมื่อแก้ Output, Station, Notes หรือรายการ Ingredients']
+
+  indexes {
+    profile_id [name: 'idx_recipe_profile']
+  }
+
+  Note: 'สูตร Craft หนึ่งสูตรต่อ Output Item; กราฟ Recipe ของ Profile ต้องเป็น DAG (Cycle Detection ตอนบันทึก)'
+}
+
+Table recipe_ingredient [headercolor: #011B4E] {
+  recipe_id integer [not null, note: 'Recipe เจ้าของ']
+  item_id integer [not null, note: 'วัตถุดิบ (ON DELETE RESTRICT) ห้ามเท่ากับ recipe.output_item_id']
+  qty integer [not null, note: 'CHECK (qty > 0) จำนวนต่อการ Craft หนึ่งครั้ง']
+  mode requirement_mode [not null, default: 'craft', note: "TEXT CHECK (mode IN ('craft','gather'))"]
+  sort_order integer [not null, default: 0, note: 'ลำดับแสดงผลที่ผู้ใช้จัด']
+
+  indexes {
+    (recipe_id, item_id) [pk]
+    item_id [name: 'idx_recipe_ingredient_item', note: 'หาว่า Item ถูกใช้ใน Recipe ใด (ITEM_IN_USE, Cycle Detection)']
+  }
+
+  Note: 'วัตถุดิบของ Recipe; หนึ่ง Item ปรากฏใน Recipe เดียวได้ครั้งเดียว'
+}
+
+Table quest [headercolor: #011B4E] {
+  id integer [pk, increment]
+  profile_id integer [not null]
+  name text [not null, note: 'ซ้ำกันได้']
+  status quest_status [not null, default: 'active', note: "TEXT CHECK (status IN ('active','paused','completed')) การเปลี่ยนเป็น completed ไม่แตะ inventory"]
+  notes text [null]
+  created_at text [not null]
+  updated_at text [not null]
+  completed_at text [null, note: 'มีค่าก็ต่อเมื่อ status = completed; ล้างเป็น NULL เมื่อกลับไป active/paused']
+
+  indexes {
+    (profile_id, status) [name: 'idx_quest_profile_status']
+  }
+
+  Note: 'Quest พร้อมสถานะ; เข้าคำนวณ Gathering List เฉพาะเมื่อมี tracking_target และ status = active'
+}
+
+Table quest_requirement [headercolor: #011B4E] {
+  quest_id integer [not null, note: 'Quest เจ้าของ']
+  item_id integer [not null, note: 'Item ที่ต้องส่ง (ON DELETE RESTRICT)']
+  qty integer [not null, note: 'CHECK (qty > 0)']
+  mode requirement_mode [not null, default: 'craft', note: "TEXT CHECK (mode IN ('craft','gather')) ความหมายเดียวกับ recipe_ingredient.mode"]
+  sort_order integer [not null, default: 0]
+
+  indexes {
+    (quest_id, item_id) [pk]
+    item_id [name: 'idx_quest_requirement_item', note: 'หาว่า Item ถูกใช้ใน Quest ใด']
+  }
+
+  Note: 'Items ที่ Quest ต้องการ; หนึ่ง Item ต่อ Quest หนึ่งแถว'
+}
+
+Table tracking_target [headercolor: #2E7D32] {
+  id integer [pk, increment, note: 'ใช้ใน window.api.tracking.reorder(ids)']
+  profile_id integer [not null, note: 'เท่ากับ Profile ของ Quest/Recipe ที่ชี้ เพื่อให้ Query ตาม Profile ใช้ Index เดียว']
+  kind target_kind [not null, note: "TEXT CHECK (kind IN ('quest','recipe'))"]
+  quest_id integer [null, unique, note: 'เมื่อ kind = quest; UNIQUE อนุญาต NULL หลายแถว']
+  recipe_id integer [null, unique, note: 'เมื่อ kind = recipe']
+  target_qty integer [not null, default: 1, note: 'CHECK (target_qty > 0) จำนวน Output ที่ต้องการสำหรับ Recipe target; ไม่ใช้กับ Quest']
+  priority integer [not null, note: 'ค่าน้อย = ได้รับการจัดสรรก่อน; Repository เขียนใหม่เป็น 1..n ทุกครั้งที่เพิ่ม/ลบ/Reorder']
+  pinned integer [not null, default: 0, note: '1 = Pin Target ใน Overlay (Hotkey next/previous pinned target)']
+  created_at text [not null, note: 'เวลาเพิ่มเข้า Tracking']
+
+  indexes {
+    (profile_id, priority) [name: 'idx_tracking_target_profile_priority']
+  }
+
+  Note: '''
+    Active Tracking Targets ที่เข้าคำนวณ Gathering List
+    CHECK ((kind = 'quest' AND quest_id IS NOT NULL AND recipe_id IS NULL)
+        OR (kind = 'recipe' AND recipe_id IS NOT NULL AND quest_id IS NULL))
+    แถวหนึ่งชี้ Quest หรือ Recipe อย่างใดอย่างหนึ่งเท่านั้น และ Quest/Recipe หนึ่งมี Target ได้หนึ่งแถว
+  '''
+}
+
+Table app_setting [headercolor: #6D6D6D] {
+  key text [pk, note: 'active_profile_id | hotkeys | overlay | window | preferences']
+  value text [not null, note: 'JSON (JSON.stringify) รูปร่างตาม docs/04-data-model.md ส่วนที่ 3.12; Repository ตรวจด้วย Type Guard ตอนอ่าน']
+  updated_at text [not null]
+
+  Note: 'ค่า Settings ทั้งหมดต่อ Key ไม่มีความสัมพันธ์กับตารางอื่น เขียนด้วย INSERT ... ON CONFLICT(key) DO UPDATE'
+}
+
+// ความสัมพันธ์และกฎการลบ (ตรงกับ ON DELETE ใน DDL)
+Ref: item.profile_id > game_profile.id [delete: cascade]
+Ref: inventory.item_id - item.id [delete: cascade]
+Ref: recipe.profile_id > game_profile.id [delete: cascade]
+Ref: recipe.output_item_id - item.id [delete: cascade]
+Ref: recipe_ingredient.recipe_id > recipe.id [delete: cascade]
+Ref: recipe_ingredient.item_id > item.id [delete: restrict]
+Ref: quest.profile_id > game_profile.id [delete: cascade]
+Ref: quest_requirement.quest_id > quest.id [delete: cascade]
+Ref: quest_requirement.item_id > item.id [delete: restrict]
+Ref: tracking_target.profile_id > game_profile.id [delete: cascade]
+Ref: tracking_target.quest_id - quest.id [delete: cascade]
+Ref: tracking_target.recipe_id - recipe.id [delete: cascade]
+
+TableGroup profile_and_items {
+  game_profile
+  item
+  inventory
+}
+
+TableGroup recipes_and_quests {
+  recipe
+  recipe_ingredient
+  quest
+  quest_requirement
+}
+
+TableGroup tracking_and_settings {
+  tracking_target
+  app_setting
+}

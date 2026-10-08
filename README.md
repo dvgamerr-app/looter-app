@@ -1,6 +1,6 @@
 # GameLooter
 
-GameLooter is a Vue 3 and Electron desktop app for keeping game items, loot, and reminders in one place. The current renderer is a lightweight material checklist scaffold, while the Electron main process manages the local JSON-backed data layer.
+GameLooter is a Vue 3 and Electron desktop app for tracking game items, crafting materials and quest requirements across many games, with a Windows overlay for use while playing. The current renderer is a placeholder checklist, and the Electron main process owns the local data layer. The planning documents in `docs/` describe the target product and the development roadmap.
 
 Project links:
 
@@ -10,8 +10,9 @@ Project links:
 
 ## Requirements
 
-- Node.js 20.12.1 or newer
-- Bun 1.3.14
+- Windows 10 or 11, x64, for the packaged application
+- Bun 1.4.2 as the package manager and script runner
+- Node.js 24 LTS, needed only by `bun run typecheck` because vue-tsc cannot run under Bun
 
 ## Setup and development
 
@@ -21,7 +22,7 @@ Install the versions recorded in `bun.lock`:
 bun install --frozen-lockfile
 ```
 
-Start the Vite renderer and Electron development process:
+Start the Vite renderer and the Electron development process:
 
 ```sh
 bun run dev
@@ -35,7 +36,7 @@ Compile the renderer, Electron main process, and preload script without packagin
 bun x vite build
 ```
 
-Create the production bundle and platform installer with Electron Builder:
+Create the production bundle and the Windows NSIS installer with Electron Builder:
 
 ```sh
 bun run build
@@ -45,26 +46,29 @@ Generated output is written to `dist/`, `dist-electron/`, and `release/<version>
 
 ## Project structure
 
-- `src/` — Vue renderer and global Tailwind/Sass styles
-- `electron/main.js` — Electron lifecycle and browser window
-- `electron/preload/` — isolated renderer bridge
-- `electron/database/` — local JSON-backed data access
-- `electron-builder.json5` — Windows, macOS, and Linux packaging targets
+- `src/` — Vue renderer, Tailwind CSS 4 utilities and the global stylesheet
+- `electron/main.ts` — Electron lifecycle and the application window
+- `electron/preload.ts` — sandboxed bridge between the renderer and the main process
+- `electron/database/` — legacy JSON data layer, scheduled to be replaced by SQLite
+- `docs/` — repository audit, architecture, feature specification, data model, UI/UX plan, roadmap, risks and acceptance criteria
+- `electron-builder.json5` — Windows x64 packaging
 - `data/` — development data excluded from version control
 
 ## Quality checks
 
-This repository currently has no dedicated test, lint, type-check, or format script. Before submitting changes, run the available checks:
+There is no test suite yet. Before submitting changes, run the available checks:
 
 ```sh
 bun install --frozen-lockfile
+bun run lint
+bun run typecheck
 bun x vite build
 bun run build
 bun audit
 git diff --check
 ```
 
-`bun audit` may report advisories inherited from Electron packaging and Tailwind build tooling. Review the result before releasing, even when the application build succeeds.
+`bun run typecheck` runs vue-tsc under Node.js for the renderer and tsc under Bun for the Electron code. `bun audit` reports advisories inherited from Electron packaging and lint tooling; review the result before releasing, even when the application build succeeds.
 
 ## Support
 
