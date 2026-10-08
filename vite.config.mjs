@@ -13,14 +13,11 @@ export default defineConfig({
         entry: 'electron/main.js',
       },
       preload: {
-        // Shortcut of `build.rollupOptions.input`.
-        // Preload scripts may contain Web assets, so use the `build.rollupOptions.input` instead `build.lib.entry`.
-        input: path.join(__dirname, 'electron/preload/index.js'),
+        // Shortcut of `build.rolldownOptions.input`.
+        // Preload scripts may contain Web assets, so use the `build.rolldownOptions.input` instead `build.lib.entry`.
+        input: path.join(import.meta.dirname, 'electron/preload/index.js'),
       },
-      // Ployfill the Electron and Node.js API for Renderer process.
-      // If you want use Node.js in Renderer process, the `nodeIntegration` needs to be enabled in the Main process.
-      // See 👉 https://github.com/electron-vite/vite-plugin-electron-renderer
-      renderer: {},
+      // The renderer never uses Node.js APIs: it talks to the main process through the preload bridge only.
     }),
   ],
 })
