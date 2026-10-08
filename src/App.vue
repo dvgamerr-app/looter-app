@@ -4,15 +4,15 @@ import Lists from './components/Lists.vue'
 
 <template>
   <nav class="title border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
-    <div class="mx-auto flex h-10 max-w-screen-xl items-center p-1">
+    <div class="drag-region mx-auto flex h-10 max-w-(--breakpoint-xl) items-center p-1">
       <span class="self-center whitespace-nowrap pl-2 font-semibold dark:text-white">GameLooter</span>
     </div>
   </nav>
   <Lists class="desktop" />
 </template>
 
-<style lang="scss" scoped>
-.max-w-screen-xl {
+<style scoped>
+.drag-region {
   user-select: none;
   -webkit-app-region: drag;
 }
