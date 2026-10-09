@@ -23,3 +23,31 @@
 - Overlay เป็น Window แยกแบบ Transparent และ Always-on-top รองรับ Borderless Windowed เป็นหลัก ไม่ใช้ Injection
 - Manual Inventory Tracking เป็นรูปแบบหลัก ไม่อ่าน Memory หรือ Process ของเกม
 - Packaging เป้าหมาย Windows 10/11 x64 เท่านั้นใน Phase แรก
+
+## แผนทั้งหมดโดยสรุป
+
+รายละเอียด Task รายตัว (รหัส, ไฟล์เป้าหมาย, Dependencies, ขนาด, วิธีตรวจสอบ) อยู่ใน [Development Roadmap](06-development-roadmap.md) ตารางนี้เป็นภาพรวมเท่านั้น
+
+| Phase | เป้าหมาย | Task | PR | สถานะ |
+|---|---|---|---|---|
+| 1 Foundation | Audit, Dependencies, Toolchain, Security baseline, SQLite, Typed IPC, App shell, Game Profile | Part A เสร็จ; Part B = P1-00 ถึง P1-16 | `feat/phase1-foundation` | Part A เสร็จ, Part B รอสั่งเริ่ม |
+| 2 Core Tracking | Item Library, ภาพจากไฟล์/Clipboard, Recipes (Nested, Cycle check), Quests, Inventory, Aggregation, Gathering List, Consume/Craft | P2-01 ถึง P2-18 | `feat/phase2-core-tracking` | ยังไม่เริ่ม |
+| 3 Windows Overlay | Overlay window, View/Interactive, Click-through, Opacity/Compact, Pin, Global Hotkeys | P3-01 ถึง P3-10 | `feat/phase3-overlay` | ยังไม่เริ่ม |
+| 4 Capture & Productivity | Region capture, Crop, Clipboard fallback (Win+Shift+S), Quick item creation, Gathering List filters | P4-01 ถึง P4-08 | `feat/phase4-capture` | ยังไม่เริ่ม |
+| 5 Optimization & Distribution | Performance, Backup/Restore/Export/Import, ไอคอน ≥256px, Signing, Update mechanism, Windows 10/11 matrix, Release | P5-01 ถึง P5-10 | `feat/phase5-distribution` | ยังไม่เริ่ม |
+
+### Phase 1 Part B (ขั้นตอนถัดไป)
+
+1. P1-01 ถึง P1-05: better-sqlite3 (`npmRebuild: false`), Connection, Migrations + `001-initial`, Repositories, Domain skeleton
+2. P1-06 ถึง P1-09: Typed IPC, Preload API แทน Generic bridge, CSP, Settings Store
+3. P1-10 ถึง P1-12: App shell (vue-router), Game Profile Management, Bootstrap Main Process ใหม่
+4. P1-13 ถึง P1-16: ลบ Legacy (`electron/database`, `electron/settings`, jsonpath-plus, yaml), อัปเดต README/CLAUDE.md, Verification Pass, เตรียม PR
+
+### สิ่งที่ต้องตัดสินใจหรือเตรียมก่อนถึง Phase ที่เกี่ยวข้อง
+
+- ติดตั้ง Node.js 24 LTS เพื่อรัน `bun run typecheck` (ก่อนปิด Phase 1)
+- ไอคอน Windows ขนาดอย่างน้อย 256×256 และการตัดสินใจเรื่อง Code Signing (Phase 5)
+- ตรวจสิทธิ์ GitHub Releases และ Release workflow ก่อนทำ Auto-update (Phase 5)
+- อนุมัติ Hotkey ค่าเริ่มต้นและเลือก Font (Phase 3 และ UI)
+
+รายการตัดสินใจทั้งหมดอยู่ในหัวข้อ 11 ของ Roadmap และความเสี่ยงอยู่ใน [Risks & Limitations](07-risks-and-limitations.md)
