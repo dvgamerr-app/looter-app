@@ -31,6 +31,23 @@ export default withVueTs(
     languageOptions: { globals: globals.node },
   },
   {
+    name: 'app/domain-purity',
+    files: ['electron/domain/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['electron', 'electron/*', 'better-sqlite3', 'node:*', '../database/*', '../ipc/*'],
+              message: 'Domain logic must stay pure: do not import Electron, SQLite, Node.js or other layers.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     name: 'app/renderer',
     files: ['src/**/*.{ts,vue}'],
     languageOptions: { globals: globals.browser },
