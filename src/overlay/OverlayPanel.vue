@@ -77,13 +77,15 @@ const footer = computed(() => {
 
 // Rows that do not fit are summarised as "+N รายการ"; Interactive mode scrolls instead (UI/UX Design Plan 4.1).
 const list = useTemplateRef<HTMLElement>('list')
-const capacity = ref(Infinity)
+const listHeight = ref(Infinity)
 const rowHeight = computed(() => (state.value.compact ? COMPACT_ROW : FULL_ROW))
+// Derived from the measured height, so switching between compact and full rows recounts without a resize.
+const capacity = computed(() => (Number.isFinite(listHeight.value) ? Math.max(1, Math.floor(listHeight.value / rowHeight.value)) : Infinity))
 let observer: ResizeObserver | null = null
 onMounted(() => {
   if (!list.value) return
   observer = new ResizeObserver(([entry]) => {
-    capacity.value = Math.max(1, Math.floor((entry?.contentRect.height ?? 0) / rowHeight.value))
+    listHeight.value = entry?.contentRect.height ?? 0
   })
   observer.observe(list.value)
 })
