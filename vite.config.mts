@@ -26,6 +26,13 @@ export default defineConfig({
       main: {
         // Shortcut of `build.lib.entry`.
         entry: 'electron/main.ts',
+        vite: {
+          build: {
+            // better-sqlite3 locates its native addon relative to its own files, so it must stay a
+            // runtime require and never be bundled into dist-electron/main.js.
+            rolldownOptions: { external: ['better-sqlite3'] },
+          },
+        },
       },
       preload: {
         // Shortcut of `build.rolldownOptions.input`. Emitted as dist-electron/preload.js.
