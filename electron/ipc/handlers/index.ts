@@ -1,0 +1,44 @@
+import type { BackupService } from '../../backup/backup-service'
+import type { HotkeyManager } from '../../hotkeys/hotkey-manager'
+import type { CaptureController } from '../../windows/capture-window'
+import type { Updater } from '../../updater/updater'
+import type { OverlayController } from '../../windows/overlay-window'
+import type { AppContext } from '../context'
+import { registerUnimplementedChannels } from '../register'
+import { registerAppHandlers } from './app'
+import { registerBackupHandlers } from './backup'
+import { registerCaptureHandlers } from './capture'
+import { registerGatheringHandlers } from './gathering'
+import { registerInventoryHandlers } from './inventory'
+import { registerItemHandlers } from './items'
+import { registerOverlayHandlers } from './overlay'
+import { registerProfileHandlers } from './profiles'
+import { registerQuestHandlers } from './quests'
+import { registerRecipeHandlers } from './recipes'
+import { registerSettingsHandlers } from './settings'
+import { registerTrackingHandlers } from './tracking'
+
+export interface HandlerServices {
+  hotkeys: HotkeyManager
+  overlay: OverlayController
+  capture: CaptureController
+  backup: BackupService
+  updater: Updater
+}
+
+/** Registers every handler built so far; the rest of the contract answers "not supported yet". */
+export function registerIpcHandlers(context: AppContext, services: HandlerServices): void {
+  registerProfileHandlers(context, services.overlay)
+  registerSettingsHandlers(context, services.hotkeys)
+  registerAppHandlers(context, services.updater)
+  registerItemHandlers(context)
+  registerRecipeHandlers(context)
+  registerQuestHandlers(context)
+  registerTrackingHandlers(context, services.overlay)
+  registerInventoryHandlers(context)
+  registerGatheringHandlers(context)
+  registerCaptureHandlers(context, services.capture)
+  registerOverlayHandlers(services.overlay)
+  registerBackupHandlers(services.backup)
+  registerUnimplementedChannels()
+}

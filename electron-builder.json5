@@ -5,21 +5,34 @@
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   "appId": "com.dvgamerr.app.looter",
   "asar": true,
+  "npmRebuild": false,
+  // Tells electron-updater where releases live and makes electron-builder write latest.yml. Publishing itself is
+  // done by the release workflow (the build script passes --publish never).
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "dvgamerr-app",
+      "repo": "looter-app"
+    }
+  ],
   "productName": "GameLooter",
   "directories": {
     "output": "release/${version}"
   },
   "files": [
     "dist",
-    "dist-electron"
+    "dist-electron",
+    // better-sqlite3 ships its C++ sources and the prebuilt addons of every platform; only the one for
+    // Windows x64 is needed at run time.
+    "!node_modules/better-sqlite3/deps/**",
+    "!node_modules/better-sqlite3/src/**",
+    "!node_modules/better-sqlite3/binding.gyp",
+    "!node_modules/better-sqlite3/prebuilds/darwin-*",
+    "!node_modules/better-sqlite3/prebuilds/linux*",
+    "!node_modules/better-sqlite3/prebuilds/win32-arm64.node"
   ],
-  "mac": {
-    "target": [
-      "dmg"
-    ],
-    "artifactName": "${productName}-Mac-${version}-Installer.${ext}"
-  },
   "win": {
+    "icon": "public/looter.ico",
     "target": [
       {
         "target": "nsis",
@@ -35,11 +48,5 @@
     "perMachine": false,
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": false
-  },
-  "linux": {
-    "target": [
-      "AppImage"
-    ],
-    "artifactName": "${productName}-Linux-${version}.${ext}"
   }
 }

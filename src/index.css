@@ -1,0 +1,142 @@
+@import './fonts.css';
+@import 'tailwindcss';
+
+/* Keep Tailwind from scanning the planning documents for class names. */
+@source not "../docs";
+
+@theme {
+  /* Typography */
+  --font-sans: 'Open Sans', 'Leelawadee UI', 'Segoe UI', system-ui, sans-serif;
+  --font-numeric: 'Roboto', 'Open Sans', 'Segoe UI', system-ui, sans-serif;
+  --text-caption: 12px;
+  --text-body: 14px;
+  --text-number: 16px;
+  --text-heading: 18px;
+
+  /* Surfaces (dark is the default theme) */
+  --color-surface-0: #0f1115;
+  --color-surface-1: #171a21;
+  --color-surface-2: #1f232c;
+  --color-surface-3: #2a2f3a;
+  --color-border: #2f3542;
+  --color-text: #e8eaf0;
+  --color-text-muted: #9aa3b2;
+  --color-text-inverse: #0f1115;
+
+  /* Accent */
+  --color-accent: #0f766e;
+  --color-accent-hover: #115e59;
+  --color-accent-text: #5eead4;
+  --color-focus: #2dd4bf;
+
+  /* Status roles */
+  --color-status-ok: #22c55e;
+  --color-status-warning: #f59e0b;
+  --color-status-missing: #ef4444;
+  --color-status-neutral: #6b7280;
+
+  /* Overlay */
+  --color-overlay-bg: #0b0d12;
+  --color-overlay-border: #2dd4bf;
+  --color-status-ok-overlay: #4ade80;
+  --color-status-warning-overlay: #fbbf24;
+  --color-status-missing-overlay: #f87171;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* Component sizes */
+  --size-hit: 32px;
+  --size-sidebar: 200px;
+  --size-sidebar-collapsed: 56px;
+}
+
+:root {
+  color-scheme: dark;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: 1.4;
+  background: var(--color-surface-0);
+  color: var(--color-text);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+button,
+a {
+  -webkit-app-region: no-drag;
+  user-select: none;
+}
+
+input,
+textarea {
+  user-select: text;
+}
+
+body #app {
+  display: grid;
+  grid-template-areas:
+    'title title'
+    'sidebar desktop';
+  grid-template-columns: auto 1fr;
+  /* The overlay reports its height through env() when the window uses titleBarOverlay. */
+  grid-template-rows: env(titlebar-area-height, 40px) minmax(0, 1fr);
+  height: 100%;
+}
+
+body :focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+body ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+body ::-webkit-scrollbar-thumb {
+  background-color: var(--color-surface-3);
+  border-radius: 5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* The overlay page is a transparent window: only the panel is painted (UI/UX Design Plan 4.4). */
+html.overlay,
+html.overlay body {
+  background: transparent;
+}
+
+html.overlay body #app {
+  display: block;
+  height: 100%;
+}
+
+/* No transitions or animations anywhere in the overlay, to keep GPU and CPU use at a minimum (F9-R11). */
+html.overlay *,
+html.overlay *::before,
+html.overlay *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+html.overlay .overlay-text {
+  text-shadow: 0 1px 2px #000;
+}

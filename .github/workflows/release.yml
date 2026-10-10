@@ -1,0 +1,48 @@
+name: Release
+
+# Runs when a version tag such as v1.0.0 is pushed. It builds the Windows installer and attaches it to a
+# draft GitHub release, so the owner can write the notes (including the SmartScreen note) before publishing.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      # vue-tsc needs Node.js; Bun alone would silently skip the .vue files.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Tag matches package.json
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $version" >&2
+            exit 1
+          fi
+
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run typecheck
+      - run: bun run build
+
+      - name: Draft release with the installer
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --draft --generate-notes --title "GameLooter $GITHUB_REF_NAME" \
+            release/*/GameLooter-Windows-*-Setup.exe release/*/GameLooter-Windows-*-Setup.exe.blockmap release/*/latest.yml
