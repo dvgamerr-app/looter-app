@@ -58,6 +58,10 @@ Generated output is written to `dist/`, `dist-electron/`, and `release/<version>
 - `electron-builder.json5` — Windows x64 packaging
 - `data/` — development data excluded from version control
 
+## Installing the unsigned installer
+
+The installer is not code signed yet, so Windows SmartScreen may show "Windows protected your PC". Choose **More info** and then **Run anyway**. Updates are checked and installed from About only when you press the buttons; the download is verified against the SHA-512 in the release's `latest.yml`. Releases are created by pushing a `v<version>` tag that matches `package.json`.
+
 ## Data and migrations
 
 The app stores everything in one SQLite database, `%APPDATA%\looter-app\data\gamelooter.sqlite` (WAL mode, foreign keys on), and Item images under `data\images\<profile_id>\`. Only the main process opens the database; the renderer reaches it through `window.api` and never receives a profile id, because every handler reads the active profile in the main process.
