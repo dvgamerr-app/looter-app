@@ -6,7 +6,7 @@ import { AppError } from '../errors'
 import { handle } from '../register'
 import { parseId, parseName, requireRecord } from '../validate'
 
-const toDto = (row: ProfileRow): ProfileDto => ({
+const toDto = (row: ProfileRow, progress: ProfileDto['progress']): ProfileDto => ({
   id: row.id,
   name: row.name,
   // icon_path is always NULL in Phase 1 (F1-R12); the renderer shows the first letter instead.
@@ -16,14 +16,14 @@ const toDto = (row: ProfileRow): ProfileDto => ({
   itemCount: row.itemCount,
   recipeCount: row.recipeCount,
   questCount: row.questCount,
-  // Overall progress comes from the aggregation engine in Phase 2.
-  progress: { owned: 0, required: 0 },
+  // Overall progress of the gathering list (F1-R6); the dashboard shows it per profile.
+  progress,
 })
 
 export function registerProfileHandlers({ db, repos, settings, pending, gathering }: AppContext): void {
   const snapshot = (): ProfileList => ({
     activeProfileId: settings.getActiveProfileId(),
-    profiles: repos.profiles.list().map(toDto),
+    profiles: repos.profiles.list().map((row) => toDto(row, gathering.compute(row.id).overall)),
   })
 
   /** Saves the new active profile and its last_opened_at in one transaction (F1-R4). */
@@ -48,7 +48,7 @@ export function registerProfileHandlers({ db, repos, settings, pending, gatherin
   handle('profiles:getActive', () => {
     const id = settings.getActiveProfileId()
     const row = id === null ? undefined : repos.profiles.get(id)
-    return row ? toDto(row) : null
+    return row ? toDto(row, gathering.compute(row.id).overall) : null
   })
 
   handle('profiles:create', (request) => {

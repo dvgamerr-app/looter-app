@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { ProfileDto } from '../../electron/ipc/contracts'
 import AppIcon from '../components/AppIcon.vue'
 import EmptyState from '../components/EmptyState.vue'
 import ProfileCard from '../components/ProfileCard.vue'
+import ItemThumbnail from '../components/ItemThumbnail.vue'
+import OverallProgress from '../components/OverallProgress.vue'
+import StatusBadge from '../components/StatusBadge.vue'
+import TargetSummaryList from '../components/TargetSummaryList.vue'
+import { useGathering } from '../stores/gathering'
+import { useTracking } from '../stores/tracking'
 import { announce } from '../stores/announcer'
 import { openCreateProfile, openDeleteProfile, openRenameProfile } from '../stores/profile-dialogs'
 import { useProfiles } from '../stores/profiles'
@@ -11,6 +17,23 @@ import { useToasts } from '../stores/toasts'
 
 const profiles = useProfiles()
 const toasts = useToasts()
+const gathering = useGathering()
+const { targets } = useTracking()
+
+// The five items still missing the most (UI/UX Design Plan 3.1).
+const topMissing = computed(() =>
+  gathering.result.value.items
+    .filter((row) => row.missing > 0)
+    .sort((a, b) => b.missing - a.missing)
+    .slice(0, 5),
+)
+
+const quickLinks = [
+  { name: 'gathering', label: 'Gathering List' },
+  { name: 'items', label: 'Item Library' },
+  { name: 'recipes', label: 'Recipes' },
+  { name: 'quests', label: 'Quests' },
+] as const
 
 const firstName = ref('')
 const firstError = ref('')
@@ -146,9 +169,83 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           {{ profiles.activeProfile.value.name }}
         </h2>
         <EmptyState
+          v-if="targets.length === 0"
           title="ยังไม่มีสิ่งที่ติดตาม"
-          description="เพิ่ม Item, Recipe และ Quest แล้วความคืบหน้าของเกมนี้จะแสดงที่นี่ (เปิดใช้ใน Phase 2)"
-        />
+          description="สร้าง Recipe หรือ Quest แล้วเลือกมาติดตามเพื่อดูความคืบหน้าของเกมนี้ที่นี่"
+        >
+          <div class="flex gap-2">
+            <RouterLink
+              :to="{ name: 'recipes' }"
+              class="h-(--size-hit) rounded-md bg-accent px-4 leading-8 font-medium text-white hover:bg-accent-hover"
+            >
+              สร้าง Recipe
+            </RouterLink>
+            <RouterLink
+              :to="{ name: 'quests' }"
+              class="h-(--size-hit) rounded-md bg-accent px-4 leading-8 font-medium text-white hover:bg-accent-hover"
+            >
+              สร้าง Quest
+            </RouterLink>
+          </div>
+        </EmptyState>
+        <template v-else>
+          <OverallProgress
+            :owned="gathering.result.value.overall.owned"
+            :required="gathering.result.value.overall.required"
+          />
+          <div class="grid gap-6 md:grid-cols-2">
+            <div>
+              <h3 class="mb-2 font-medium">
+                ยังขาดมากที่สุด
+              </h3>
+              <ul class="flex flex-col gap-1">
+                <li
+                  v-for="row in topMissing"
+                  :key="row.itemId"
+                  class="flex items-center gap-3"
+                >
+                  <ItemThumbnail
+                    :src="row.thumbnailUrl"
+                    :name="row.name"
+                    :size="32"
+                  />
+                  <span class="min-w-0 flex-1 truncate">{{ row.name }}</span>
+                  <span class="font-numeric tabular-nums text-text-muted">{{ row.owned }} / {{ row.required }}</span>
+                  <StatusBadge
+                    :required="row.required"
+                    :owned="row.owned"
+                    :missing="row.missing"
+                  />
+                </li>
+                <li
+                  v-if="topMissing.length === 0"
+                  class="text-status-ok"
+                >
+                  ไม่มีรายการที่ขาด
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 class="mb-2 font-medium">
+                Active Tracking Targets
+              </h3>
+              <TargetSummaryList />
+            </div>
+          </div>
+        </template>
+        <nav
+          class="flex flex-wrap gap-2 pt-2"
+          aria-label="ทางลัด"
+        >
+          <RouterLink
+            v-for="link in quickLinks"
+            :key="link.name"
+            :to="{ name: link.name }"
+            class="h-8 rounded-md bg-surface-3 px-3 leading-8 hover:bg-border"
+          >
+            {{ link.label }}
+          </RouterLink>
+        </nav>
       </section>
     </template>
   </div>

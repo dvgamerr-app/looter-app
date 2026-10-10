@@ -13,7 +13,7 @@ import type {
 
 import type { RecipeExpansion } from '../domain/expand'
 
-export type { ItemCategory, Mode, TrackingKind } from '../domain/types'
+export type { ItemCategory, Mode, TargetAllocation, TrackingKind } from '../domain/types'
 export type { RecipeExpansion, RecipeTreeNode } from '../domain/expand'
 
 // ---------------------------------------------------------------------------------------------
