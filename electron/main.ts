@@ -1,8 +1,9 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, dialog } from 'electron'
 import { release, arch, platform } from 'node:os'
 import path from 'node:path'
-import { createTable, Relink, JSONPath } from './database'
-import { onWindowPositionEvent } from './settings'
+import { backupsDir, closeDatabase, openDatabase } from './database'
+import { migrate, MigrationError, SchemaTooNewError } from './database/migrate'
+import { migrations } from './database/migrations'
 
 const DIST = path.join(__dirname, '../dist')
 const VITE_PUBLIC = app.isPackaged ? DIST : path.join(DIST, '../public')
@@ -40,17 +41,6 @@ function createWindow() {
     },
   })
 
-  const onPositionChanged = onWindowPositionEvent(win)
-  win.on('moved', onPositionChanged)
-  win.on('maximize', onPositionChanged)
-  win.on('unmaximize', onPositionChanged)
-
-  // Test active push message to Renderer-process.
-  win.webContents.on('did-finish-load', async () => {
-    const data = await JSONPath('$')
-    win?.webContents.send('main-process-message', data)
-  })
-
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
     win.webContents.openDevTools()
@@ -77,7 +67,25 @@ app.on('activate', () => {
   }
 })
 
+app.on('before-quit', closeDatabase)
+
 app.whenReady().then(async () => {
-  await createTable('Game', 'Item', 'ItemCraft', 'Recipe')
-  await Relink()
-}).then(createWindow)
+  try {
+    await migrate(openDatabase(), migrations, backupsDir())
+  } catch (error) {
+    if (error instanceof SchemaTooNewError) {
+      dialog.showErrorBox('ต้องอัปเดตแอป', 'ข้อมูลนี้ถูกสร้างจากแอปเวอร์ชันใหม่กว่า กรุณาอัปเดตแอปก่อนเปิดใช้งาน')
+    } else if (error instanceof MigrationError) {
+      dialog.showErrorBox(
+        'อัปเดตข้อมูลไม่สำเร็จ',
+        `${error.message}\n\nสำเนาก่อนอัปเดต: ${error.backupPath ?? '(ฐานข้อมูลใหม่ ไม่มีสำเนา)'}`,
+      )
+    } else {
+      console.error(error)
+    }
+    closeDatabase()
+    app.quit()
+    return
+  }
+  createWindow()
+})

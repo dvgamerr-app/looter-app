@@ -5,6 +5,7 @@
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   "appId": "com.dvgamerr.app.looter",
   "asar": true,
+  "npmRebuild": false,
   "productName": "GameLooter",
   "directories": {
     "output": "release/${version}"
