@@ -1,6 +1,10 @@
 import { app, BrowserWindow, dialog } from 'electron'
 import path from 'node:path'
 import { backupsDir, closeDatabase, DatabaseOpenError, openDatabase } from './database'
+import { createGatheringService } from './gathering/service'
+import { registerImageHandler, registerImageScheme } from './images/image-protocol'
+import { createPendingStore } from './images/pending-store'
+import { createNotifier } from './ipc/context'
 import { migrate, MigrationError, SchemaTooNewError } from './database/migrate'
 import { migrations } from './database/migrations'
 import { createRepositories } from './database/repositories'
@@ -35,6 +39,9 @@ function reportStartupFailure(error: unknown): void {
   }
 }
 
+// The image scheme has to be declared before the app is ready.
+registerImageScheme()
+
 // Two processes must never open the same database: the second one hands focus to the first and quits.
 if (!app.requestSingleInstanceLock()) {
   app.quit()
@@ -57,7 +64,10 @@ if (!app.requestSingleInstanceLock()) {
       const repos = createRepositories(db)
       const settings = createSettingsService(repos.settings, repos.profiles)
       settings.load()
-      registerIpcHandlers({ db, repos, settings })
+      const gathering = createGatheringService(repos, settings)
+      const pending = createPendingStore()
+      registerImageHandler()
+      registerIpcHandlers({ db, repos, settings, gathering, pending, notify: createNotifier(gathering) })
       openMainWindow(settings)
     })
     .catch((error: unknown) => {

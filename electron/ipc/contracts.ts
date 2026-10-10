@@ -11,7 +11,10 @@ import type {
   TrackingKind,
 } from '../domain/types'
 
+import type { RecipeExpansion } from '../domain/expand'
+
 export type { ItemCategory, Mode, TrackingKind } from '../domain/types'
+export type { RecipeExpansion, RecipeTreeNode } from '../domain/expand'
 
 // ---------------------------------------------------------------------------------------------
 // Result envelope and error codes (section 14.2)
@@ -197,6 +200,8 @@ export interface TrackingTargetDto {
   targetQty: number
   priority: number
   pinned: boolean
+  /** Quest targets only: paused and completed quests are kept but not counted (F4-R5). */
+  questStatus: QuestStatus | null
 }
 
 export interface GatheringItemRow extends GatheringRow {
@@ -292,7 +297,7 @@ export interface InvokeContract {
   'recipes:update': [RecipeInput & { id: number }, RecipeDto]
   'recipes:delete': [{ id: number }, null]
   'recipes:validate': [{ id?: number; outputItemId: number; ingredients: IngredientInput[] }, { ok: true }]
-  'recipes:expand': [{ id: number; quantity: number }, GatheringResult]
+  'recipes:expand': [{ id: number; quantity: number }, RecipeExpansionDto]
 
   'quests:list': [{ status?: QuestStatus } | void, QuestDto[]]
   'quests:get': [{ id: number }, QuestDto]
@@ -365,10 +370,35 @@ export interface RecipeInput {
   ingredients: IngredientInput[]
 }
 
+export interface InventoryPlanRow {
+  itemId: number
+  /** Negative when materials are used, positive for a crafted output. */
+  delta: number
+  before: number
+  after: number
+}
+
+/** What a consume or craft would do (dry run) or did. Nothing is written unless `ok`. */
 export interface InventoryPlan {
   ok: boolean
-  rows: Array<{ itemId: number; delta: number; before: number; after: number }>
-  missing: Array<{ itemId: number; need: number; owned: number }>
+  rows: InventoryPlanRow[]
+  /** The crafted output row (craft only). */
+  output: InventoryPlanRow | null
+  /** Rows that would go negative; present whenever ok is false. */
+  missing: Array<{ itemId: number; name: string; need: number; owned: number }>
+  /** Tracking target of the quest or recipe, if any, so the dialog can offer the follow-up options. */
+  target: { id: number; targetQty: number } | null
+  /** Craft: the most runs the current inventory covers (0 when an ingredient is missing). */
+  maxRuns: number | null
+  /** Consume: the quest status, so the dialog can hide "complete the quest too". */
+  questStatus: QuestStatus | null
+}
+
+export interface RecipeExpansionDto extends RecipeExpansion {
+  recipeId: number
+  quantity: number
+  /** Same single-target algorithm as the Gathering List, using the real inventory (F3-R8). */
+  net: Pick<AggregationResult, 'items' | 'craftPlan' | 'overall'>
 }
 
 // ---------------------------------------------------------------------------------------------

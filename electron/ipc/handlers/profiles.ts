@@ -20,7 +20,7 @@ const toDto = (row: ProfileRow): ProfileDto => ({
   progress: { owned: 0, required: 0 },
 })
 
-export function registerProfileHandlers({ db, repos, settings }: AppContext): void {
+export function registerProfileHandlers({ db, repos, settings, pending, gathering }: AppContext): void {
   const snapshot = (): ProfileList => ({
     activeProfileId: settings.getActiveProfileId(),
     profiles: repos.profiles.list().map(toDto),
@@ -32,11 +32,14 @@ export function registerProfileHandlers({ db, repos, settings }: AppContext): vo
       if (id !== null) repos.profiles.touchLastOpened(id)
       settings.setActiveProfileId(id)
     })()
+    // Pending images belong to the previous profile and are dropped (F1-R13).
+    pending.clear()
   }
 
   const publish = (): ProfileList => {
     const list = snapshot()
     broadcast('profile:changed', list)
+    gathering.schedule()
     return list
   }
 
