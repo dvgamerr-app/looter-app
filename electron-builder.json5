@@ -23,6 +23,7 @@
     "!node_modules/better-sqlite3/prebuilds/win32-arm64.node"
   ],
   "win": {
+    "icon": "public/looter.ico",
     "target": [
       {
         "target": "nsis",
