@@ -15,6 +15,13 @@ export const backupsDir = (): string => path.join(app.getPath('userData'), 'back
 
 class CorruptDatabaseError extends Error {}
 
+/** The database could not be opened and the user has already been told why. */
+export class DatabaseOpenError extends Error {
+  constructor(cause: unknown) {
+    super('Database could not be opened', { cause })
+  }
+}
+
 function openFile(file: string): Db {
   const db = new Database(file)
   try {
@@ -61,7 +68,7 @@ export function openDatabase(): Db {
         'เปิดฐานข้อมูลไม่สำเร็จ',
         `${file}\n\n${(error as Error).message}\n\nหากไฟล์ถูกใช้งานโดยโปรแกรมอื่น ให้ปิดโปรแกรมนั้นแล้วเปิดแอปใหม่`,
       )
-      throw error
+      throw new DatabaseOpenError(error)
     }
     const choice = dialog.showMessageBoxSync({
       type: 'error',
@@ -72,7 +79,7 @@ export function openDatabase(): Db {
       defaultId: 1,
       cancelId: 1,
     })
-    if (choice !== 0) throw error
+    if (choice !== 0) throw new DatabaseOpenError(error)
     quarantine(file)
     connection = openFile(file)
   }

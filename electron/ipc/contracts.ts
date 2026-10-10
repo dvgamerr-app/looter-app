@@ -92,7 +92,8 @@ export interface Preferences {
   itemView: 'grid' | 'table'
 }
 
-export type HotkeyStatus = 'registered' | 'failed' | 'disabled'
+/** 'pending' = not registered yet (the hotkeys module arrives with the Overlay in Phase 3). */
+export type HotkeyStatus = 'registered' | 'failed' | 'disabled' | 'pending'
 
 export interface SettingsState {
   hotkeys: Hotkeys

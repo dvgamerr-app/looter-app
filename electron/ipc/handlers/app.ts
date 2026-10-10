@@ -1,0 +1,23 @@
+import { app, shell } from 'electron'
+import { dataDir } from '../../database'
+import type { AppContext } from '../context'
+import { AppError } from '../errors'
+import { handle } from '../register'
+
+export function registerAppHandlers({ db }: AppContext): void {
+  handle('app:getInfo', () => ({
+    name: 'GameLooter',
+    version: app.getVersion(),
+    electron: process.versions.electron,
+    chromium: process.versions.chrome,
+    node: process.versions.node,
+    schemaVersion: db.pragma('user_version', { simple: true }) as number,
+    dataPath: dataDir(),
+  }))
+
+  handle('app:openDataFolder', async () => {
+    const failure = await shell.openPath(dataDir())
+    if (failure) throw new AppError('IO', 'เปิดโฟลเดอร์ข้อมูลไม่สำเร็จ', { reason: failure })
+    return null
+  })
+}
