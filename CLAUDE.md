@@ -33,6 +33,14 @@ git diff --check
 
 ## Optimization and technical-debt log
 
+### 2026-10-10 (Phase 2)
+
+- Added items, recipes, quests, tracking targets, manual inventory and the gathering list. `electron/domain/aggregation.ts`, `cycle.ts` and `expand.ts` are pure functions; the aggregation reproduces every worked example of Data Model section 7.4 (Requirement 3.5: 45/20/25, 28/68; nested, gather-override, surplus and priority-swap cases).
+- Consume and craft are single transactions that re-check the inventory inside the transaction and write nothing when anything is short; the handler composes them with completing a quest or lowering a recipe target in the same outer transaction.
+- Images: `electron/images/` holds the store (atomic writes, 64x64 padded thumbnail), the in-memory pending store (10 minutes, 5 images, 64 MB, dropped on profile switch) and the `looter-img://` protocol, which only serves `images/<profile>/...png` files. Clipboard import uses the Electron 44 `clipboard.read()` API.
+- `electron/gathering/service.ts` recomputes after every mutation (16 ms debounce) and pushes `gathering:changed`; the renderer never recalculates. Renderer stores (`src/stores/`) reload on the matching push events and clear on `profile:changed`.
+- Not verified by running the window: the image protocol, the clipboard path and every screen need a manual pass. Region capture, drag and drop of files and the Settings sections for hotkeys, overlay and backup are later phases.
+
 ### 2026-10-10
 
 - Replaced the JSON data layer with SQLite (better-sqlite3 13.0.3): `electron/database/` opens the single connection (WAL, foreign keys, `quick_check`, quarantine of a corrupt file), `migrate.ts` snapshots an existing database before migrating and applies each migration in its own transaction, and `001-initial.ts` creates the nine tables of the data model. Repositories exist for every entity; profile and setting are complete, the rest are read-only until Phase 2.

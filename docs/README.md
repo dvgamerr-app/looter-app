@@ -31,7 +31,7 @@
 | Phase | เป้าหมาย | Task | PR | สถานะ |
 |---|---|---|---|---|
 | 1 Foundation | Audit, Dependencies, Toolchain, Security baseline, SQLite, Typed IPC, App shell, Game Profile | Part A เสร็จ; Part B = P1-00 ถึง P1-16 | `feat/phase1-foundation` | Part A และ Part B เขียนเสร็จ (P1-00 ถึง P1-14); รอตรวจด้วยมือบนหน้าต่างจริง (P1-15) และเปิด PR (P1-16) |
-| 2 Core Tracking | Item Library, ภาพจากไฟล์/Clipboard, Recipes (Nested, Cycle check), Quests, Inventory, Aggregation, Gathering List, Consume/Craft | P2-01 ถึง P2-18 | `feat/phase2-core-tracking` | ยังไม่เริ่ม |
+| 2 Core Tracking | Item Library, ภาพจากไฟล์/Clipboard, Recipes (Nested, Cycle check), Quests, Inventory, Aggregation, Gathering List, Consume/Craft | P2-01 ถึง P2-18 | `feat/phase1-foundation` (ทำซ้อนบน branch เดียวกัน) | เขียนเสร็จ (P2-01 ถึง P2-17) รอตรวจด้วยมือบนหน้าต่างจริง (P2-18) |
 | 3 Windows Overlay | Overlay window, View/Interactive, Click-through, Opacity/Compact, Pin, Global Hotkeys | P3-01 ถึง P3-10 | `feat/phase3-overlay` | ยังไม่เริ่ม |
 | 4 Capture & Productivity | Region capture, Crop, Clipboard fallback (Win+Shift+S), Quick item creation, Gathering List filters | P4-01 ถึง P4-08 | `feat/phase4-capture` | ยังไม่เริ่ม |
 | 5 Optimization & Distribution | Performance, Backup/Restore/Export/Import, ไอคอน ≥256px, Signing, Update mechanism, Windows 10/11 matrix, Release | P5-01 ถึง P5-10 | `feat/phase5-distribution` | ยังไม่เริ่ม |
