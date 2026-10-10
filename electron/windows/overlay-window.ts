@@ -43,7 +43,11 @@ export function createOverlayController(deps: OverlayDeps) {
 
   const pinnedTargets = () => {
     const profileId = settings.getActiveProfileId()
-    return profileId === null ? [] : repos.tracking.listLabelled(profileId).filter((target) => target.pinned === 1)
+    return profileId === null
+      ? []
+      : repos.tracking
+          .listLabelled(profileId)
+          .filter((target) => target.pinned === 1 && (target.kind === 'recipe' || target.questStatus === 'active'))
   }
 
   const isShown = (): boolean => win !== null && !win.isDestroyed() && win.isVisible()
@@ -197,6 +201,8 @@ export function createOverlayController(deps: OverlayDeps) {
       // Without an active profile there is nothing to show; the wish to see it is kept (F1-R10).
       if (settings.getActiveProfileId() === null) return state()
       settings.update({ overlay: { visible: true } })
+      // During a capture the overlay stays hidden; resume() shows it afterwards.
+      if (suspended) return publish()
       showWindow()
       watchMainWindow()
       return publish()
@@ -287,7 +293,7 @@ export function createOverlayController(deps: OverlayDeps) {
       if (profileChanged) scope = 'all'
       if (settings.getActiveProfileId() === null) {
         hideWindow()
-      } else if (settings.getOverlay().visible && !isShown()) {
+      } else if (settings.getOverlay().visible && !isShown() && !suspended) {
         showWindow()
       }
       if (win && !win.isDestroyed()) publish()

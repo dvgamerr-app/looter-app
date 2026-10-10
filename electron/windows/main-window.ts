@@ -62,7 +62,11 @@ export function createMainWindow({ settings, distDir, publicDir, devServerUrl }:
   // Window geometry changes in bursts, so writes are debounced. `close` fires before the window is
   // destroyed, on a normal close and on quit alike, so the last change is never lost (F12-R12).
   const saveBounds = debounce(() => {
-    settings.setWindowState({ bounds: win.getNormalBounds(), maximized: win.isMaximized() })
+    try {
+      settings.setWindowState({ bounds: win.getNormalBounds(), maximized: win.isMaximized() })
+    } catch {
+      // A restore closes the database before the app relaunches; geometry is not worth an error dialog then.
+    }
   }, BOUNDS_SAVE_DELAY_MS)
   win.on('moved', saveBounds)
   win.on('resized', saveBounds)
