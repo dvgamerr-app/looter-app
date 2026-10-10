@@ -1,4 +1,5 @@
 import type { HotkeyManager } from '../../hotkeys/hotkey-manager'
+import type { CaptureController } from '../../windows/capture-window'
 import type { OverlayController } from '../../windows/overlay-window'
 import type { AppContext } from '../context'
 import { registerUnimplementedChannels } from '../register'
@@ -17,6 +18,7 @@ import { registerTrackingHandlers } from './tracking'
 export interface HandlerServices {
   hotkeys: HotkeyManager
   overlay: OverlayController
+  capture: CaptureController
 }
 
 /** Registers every handler built so far; the rest of the contract answers "not supported yet". */
@@ -30,7 +32,7 @@ export function registerIpcHandlers(context: AppContext, services: HandlerServic
   registerTrackingHandlers(context, services.overlay)
   registerInventoryHandlers(context)
   registerGatheringHandlers(context)
-  registerCaptureHandlers(context)
+  registerCaptureHandlers(context, services.capture)
   registerOverlayHandlers(services.overlay)
   registerUnimplementedChannels()
 }

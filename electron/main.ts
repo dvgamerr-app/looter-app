@@ -1,16 +1,20 @@
-import { app, BrowserWindow, dialog } from 'electron'
+import { app, BrowserWindow, dialog, session } from 'electron'
 import path from 'node:path'
 import { backupsDir, closeDatabase, DatabaseOpenError, openDatabase } from './database'
 import { createGatheringService } from './gathering/service'
 import { registerImageHandler, registerImageScheme } from './images/image-protocol'
 import { createPendingStore } from './images/pending-store'
+import { broadcast } from './ipc/broadcast'
 import { createNotifier } from './ipc/context'
+import { AppError } from './ipc/errors'
+import { importFromClipboard } from './ipc/handlers/capture'
 import { migrate, MigrationError, SchemaTooNewError } from './database/migrate'
 import { migrations } from './database/migrations'
 import { createRepositories } from './database/repositories'
 import { registerIpcHandlers } from './ipc/handlers'
 import { createSettingsService } from './settings/settings-service'
 import { createMainWindow } from './windows/main-window'
+import { createCaptureController } from './windows/capture-window'
 import { createOverlayController } from './windows/overlay-window'
 import { createHotkeyManager } from './hotkeys/hotkey-manager'
 
@@ -22,8 +26,11 @@ let mainWindow: BrowserWindow | null = null
 
 function openMainWindow(settings: ReturnType<typeof createSettingsService>): void {
   mainWindow = createMainWindow({ settings, distDir: DIST, publicDir: PUBLIC_DIR, devServerUrl: VITE_DEV_SERVER_URL })
+  // Closing the main window ends the app. `window-all-closed` would not fire while the hidden overlay
+  // window still exists, so the app is quit explicitly.
   mainWindow.once('closed', () => {
     mainWindow = null
+    app.quit()
   })
 }
 
@@ -77,14 +84,39 @@ if (!app.requestSingleInstanceLock()) {
         distDir: DIST,
         devServerUrl: VITE_DEV_SERVER_URL,
       })
-      // Capture and clipboard import get their handlers in Phase 4; the other four act on the overlay.
+      const context = { db, repos, settings, gathering, pending, notify: createNotifier(gathering) }
+      const capture = createCaptureController({
+        pending,
+        overlay,
+        getActiveProfileId: () => settings.getActiveProfileId(),
+        getMainWindow: () => mainWindow,
+        distDir: DIST,
+        devServerUrl: VITE_DEV_SERVER_URL,
+      })
+
+      // A failed hotkey action has no caller to return an error to, so it is announced like any capture failure.
+      const reportCaptureFailure = (error: unknown): void => {
+        const known = error instanceof AppError ? error.toJSON() : { code: 'INTERNAL' as const, message: 'จับภาพไม่สำเร็จ' }
+        broadcast('capture:changed', { phase: 'failed', error: known })
+        overlay.focusMainWindow()
+      }
+
       const hotkeys = createHotkeyManager(settings, {
         toggleOverlay: () => overlay.toggle(),
         toggleOverlayMode: () => overlay.toggleMode(),
         overlayNextTarget: () => overlay.cycleScope(1),
         overlayPrevTarget: () => overlay.cycleScope(-1),
+        startCapture: () => void capture.start().catch(reportCaptureFailure),
+        importClipboard: () =>
+          void importFromClipboard(context)
+            .then(() => overlay.focusMainWindow())
+            .catch(reportCaptureFailure),
       })
-      registerIpcHandlers({ db, repos, settings, gathering, pending, notify: createNotifier(gathering) }, { hotkeys, overlay })
+      registerIpcHandlers(context, { hotkeys, overlay, capture })
+
+      // The app never asks for browser permissions; screen capture happens in the main process only (F10-R11).
+      session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false))
+      session.defaultSession.setPermissionCheckHandler(() => false)
       hotkeys.registerAll()
       openMainWindow(settings)
       overlay.restoreOnStart()

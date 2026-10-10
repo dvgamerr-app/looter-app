@@ -38,6 +38,7 @@ export function createOverlayController(deps: OverlayDeps) {
   let win: BrowserWindow | null = null
   let scope: 'all' | number = 'all'
   let topmostTimer: ReturnType<typeof setInterval> | null = null
+  let suspended = false
 
   const pinnedTargets = () => {
     const profileId = settings.getActiveProfileId()
@@ -251,6 +252,19 @@ export function createOverlayController(deps: OverlayDeps) {
         scope = sequence[(index + direction + sequence.length) % sequence.length]!
       }
       return publish()
+    },
+
+    /** Hides the overlay for a moment without changing the saved wish to see it, for example during a capture (F10-R15). */
+    suspend(): void {
+      if (!isShown()) return
+      suspended = true
+      hideWindow()
+    },
+
+    resume(): void {
+      if (!suspended) return
+      suspended = false
+      if (settings.getOverlay().visible && settings.getActiveProfileId() !== null) showWindow()
     },
 
     focusMainWindow(): void {

@@ -47,6 +47,7 @@ export default defineConfig({
       input: {
         main: path.join(import.meta.dirname, 'index.html'),
         overlay: path.join(import.meta.dirname, 'overlay.html'),
+        capture: path.join(import.meta.dirname, 'capture.html'),
       },
     },
   },

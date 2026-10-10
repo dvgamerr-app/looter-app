@@ -5,6 +5,7 @@ import CategoryFilter from '../components/CategoryFilter.vue'
 import ConsumeMaterialsDialog from '../components/ConsumeMaterialsDialog.vue'
 import CraftPlanSection from '../components/CraftPlanSection.vue'
 import EmptyState from '../components/EmptyState.vue'
+import ItemEditDialog from '../components/ItemEditDialog.vue'
 import GatheringTable from '../components/GatheringTable.vue'
 import OverallProgress from '../components/OverallProgress.vue'
 import SearchField from '../components/SearchField.vue'
@@ -71,6 +72,9 @@ async function togglePin(itemId: number, pinned: boolean): Promise<void> {
 
 const craftRow = ref<GatheringCraftRow | null>(null)
 
+// Quick item creation without leaving the list (AC-F8-11).
+const quickOpen = ref(false)
+
 function onKeydown(event: KeyboardEvent): void {
   if ((event.target as HTMLElement).tagName === 'INPUT') return
   if (event.key === '/') {
@@ -110,6 +114,13 @@ const nothingToTrack = computed(() => quests.value.length === 0 && recipes.value
             @click="pickerOpen = !pickerOpen"
           >
             เลือก Targets… (T)
+          </button>
+          <button
+            type="button"
+            class="h-7 rounded-full bg-surface-3 px-3 text-caption hover:bg-border"
+            @click="quickOpen = true"
+          >
+            + เพิ่ม Item เร็ว
           </button>
         </div>
         <div class="flex flex-wrap items-center gap-3">
@@ -230,6 +241,13 @@ const nothingToTrack = computed(() => quests.value.length === 0 && recipes.value
     <TargetPicker
       v-if="pickerOpen"
       @close="pickerOpen = false"
+    />
+
+    <ItemEditDialog
+      :open="quickOpen"
+      :item="null"
+      @close="quickOpen = false"
+      @saved="quickOpen = false"
     />
 
     <ConsumeMaterialsDialog

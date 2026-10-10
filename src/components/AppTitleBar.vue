@@ -23,6 +23,12 @@ onBeforeUnmount(stop)
 
 const hasProfile = computed(() => profiles.state.activeProfileId !== null)
 const hotkey = computed(() => settings.value?.hotkeys.toggleOverlay ?? '')
+const captureHotkey = computed(() => settings.value?.hotkeys.startCapture ?? '')
+
+async function startCapture(): Promise<void> {
+  const result = await window.api.capture.start()
+  if (!result.ok) toasts.error(result.error.message)
+}
 
 async function toggleOverlay(): Promise<void> {
   const result = await window.api.overlay.toggle()
@@ -39,9 +45,10 @@ async function toggleOverlay(): Promise<void> {
       <span class="flex-1" />
       <button
         type="button"
-        disabled
-        class="flex h-8 items-center gap-2 rounded-md px-2 text-text-muted opacity-50"
-        title="Capture จะพร้อมใช้งานใน Phase 4"
+        :disabled="!hasProfile"
+        class="flex h-8 items-center gap-2 rounded-md px-2 text-text-muted hover:bg-surface-3 disabled:opacity-50"
+        :title="hasProfile ? `จับภาพ Item จากหน้าจอ${captureHotkey ? ` (${captureHotkey})` : ''}` : 'สร้าง Game Profile ก่อน'"
+        @click="startCapture"
       >
         <AppIcon
           name="capture"

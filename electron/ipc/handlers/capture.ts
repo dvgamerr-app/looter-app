@@ -1,16 +1,23 @@
 import { BrowserWindow, dialog, nativeImage } from 'electron'
 import { readClipboardImage } from '../../capture/clipboard-image'
+import type { CaptureController } from '../../windows/capture-window'
 import { broadcast } from '../broadcast'
-import type { PendingImage } from '../contracts'
+import type { Bounds, PendingImage } from '../contracts'
 import type { AppContext } from '../context'
 import { requireActiveProfile } from '../context'
 import { AppError } from '../errors'
 import { handle } from '../register'
-import { requireRecord } from '../validate'
+import { parseCount, requireRecord } from '../validate'
 
-// Phase 2 covers the two ways to bring an image in without the screen: a file and the clipboard.
-// Region capture (capture:start and friends) arrives with Phase 4.
-export function registerCaptureHandlers(context: AppContext): void {
+/** Brings a clipboard image in as a pending image, announcing the result (hotkey and button share this). */
+export async function importFromClipboard(context: AppContext): Promise<PendingImage> {
+  const profileId = requireActiveProfile(context)
+  const image = context.pending.add(profileId, 'clipboard', await readClipboardImage())
+  broadcast('capture:changed', { phase: 'captured', pending: image })
+  return image
+}
+
+export function registerCaptureHandlers(context: AppContext, capture: CaptureController): void {
   const { pending } = context
 
   const announce = (image: PendingImage): PendingImage => {
@@ -18,10 +25,29 @@ export function registerCaptureHandlers(context: AppContext): void {
     return image
   }
 
-  handle('capture:fromClipboard', async () => {
-    const profileId = requireActiveProfile(context)
-    return announce(pending.add(profileId, 'clipboard', await readClipboardImage()))
+  handle('capture:start', async () => {
+    requireActiveProfile(context)
+    await capture.start()
+    return null
   })
+
+  handle('capture:cancel', () => {
+    capture.cancel()
+    return null
+  })
+
+  handle('capture:commitSelection', (request) => {
+    const rect = requireRecord(requireRecord(request).rect, 'บริเวณที่เลือก')
+    const bounds: Bounds = {
+      x: parseCount(rect.x, 'x', 0),
+      y: parseCount(rect.y, 'y', 0),
+      width: parseCount(rect.width, 'width'),
+      height: parseCount(rect.height, 'height'),
+    }
+    return capture.commit(bounds)
+  })
+
+  handle('capture:fromClipboard', () => importFromClipboard(context))
 
   handle('capture:importFile', async (_request, event) => {
     const profileId = requireActiveProfile(context)
@@ -35,7 +61,7 @@ export function registerCaptureHandlers(context: AppContext): void {
     const file = result.filePaths[0]
     if (result.canceled || !file) return null
     const image = nativeImage.createFromPath(file)
-    if (image.isEmpty()) throw new AppError('UNSUPPORTED_IMAGE', 'อ่านไฟล์ภาพนี้ไม่ได้ ลองใช้ PNG หรือ JPEG')
+    if (image.isEmpty()) throw new AppError('UNSUPPORTED_IMAGE', 'อ่านไฟล์ภาพนี้ไม่ได้ ลองใช้ PNG, JPG, WebP หรือ BMP')
     return announce(pending.add(profileId, 'file', image))
   })
 

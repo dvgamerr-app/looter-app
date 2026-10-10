@@ -5,6 +5,7 @@ import { navItems } from '../navigation'
 import { useProfiles } from '../stores/profiles'
 import AppSidebar from './AppSidebar.vue'
 import AppTitleBar from './AppTitleBar.vue'
+import CaptureHost from './CaptureHost.vue'
 import ProfileDeleteDialog from './ProfileDeleteDialog.vue'
 import ProfileNameDialog from './ProfileNameDialog.vue'
 import ToastStack from './ToastStack.vue'
@@ -44,4 +45,5 @@ watch(
   <ToastStack />
   <ProfileNameDialog />
   <ProfileDeleteDialog />
+  <CaptureHost />
 </template>

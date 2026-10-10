@@ -115,6 +115,13 @@ async function save(): Promise<void> {
   if (result.error.code === 'DUPLICATE_NAME' && details?.id) clashId.value = details.id
 }
 
+// Capture ends in the shared naming dialog, where the picture can be attached to this item (F10-R6).
+async function captureScreen(): Promise<void> {
+  cancel()
+  const result = await window.api.capture.start()
+  if (!result.ok) toasts.error(result.error.message)
+}
+
 function cancel(): void {
   if (pending.value) void window.api.capture.discard({ pendingImageId: pending.value.id })
   emit('close')
@@ -185,9 +192,9 @@ const usageText = (usage: ItemUsage): string =>
         <div class="flex flex-wrap gap-2">
           <button
             type="button"
-            disabled
-            title="Capture จะพร้อมใช้งานใน Phase 4"
-            class="h-(--size-hit) rounded-md bg-surface-3 px-3 opacity-50"
+            title="จับภาพจากหน้าจอ แล้วผูกภาพในหน้าต่างที่เปิดขึ้นมา"
+            class="h-(--size-hit) rounded-md bg-surface-3 px-3 hover:bg-border"
+            @click="captureScreen"
           >
             Capture
           </button>
