@@ -63,7 +63,6 @@ if (!app.requestSingleInstanceLock()) {
   })
 
   app.on('window-all-closed', () => app.quit())
-  app.on('before-quit', closeDatabase)
 
   // Startup order follows F12-R6: database, migrations, settings, IPC handlers, then the window.
   app
@@ -140,9 +139,11 @@ if (!app.requestSingleInstanceLock()) {
       hotkeys.registerAll()
       openMainWindow(settings)
       overlay.restoreOnStart()
+      // Order matters: the overlay flushes its last bounds into the database, so the database closes last (F12-R12).
       app.on('before-quit', () => {
         hotkeys.unregisterAll()
         overlay.destroy()
+        closeDatabase()
       })
     })
     .catch((error: unknown) => {
