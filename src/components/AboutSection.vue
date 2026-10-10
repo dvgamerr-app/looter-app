@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import type { AppInfo, UpdateInfo } from '../../electron/ipc/contracts'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import type { AppInfo, UpdateInfo, UpdateProgress } from '../../electron/ipc/contracts'
 
 const info = ref<AppInfo | null>(null)
 onMounted(async () => {
@@ -11,6 +11,23 @@ onMounted(async () => {
 const update = ref<UpdateInfo | null>(null)
 const checking = ref(false)
 const updateError = ref('')
+
+const progress = ref<UpdateProgress | null>(null)
+const stopProgress = window.api.on('update:changed', (event) => {
+  progress.value = event
+})
+onBeforeUnmount(stopProgress)
+
+async function downloadUpdate(): Promise<void> {
+  updateError.value = ''
+  const result = await window.api.app.downloadUpdate()
+  if (!result.ok) updateError.value = result.error.message
+}
+
+async function installUpdate(): Promise<void> {
+  const result = await window.api.app.installUpdate()
+  if (!result.ok) updateError.value = result.error.message
+}
 
 async function checkUpdate(): Promise<void> {
   checking.value = true
@@ -97,11 +114,45 @@ const links = [
             class="text-accent-text underline"
             target="_blank"
             rel="noopener"
-          >ดาวน์โหลด</a>
+          >ดูหน้า Release</a>
+          <button
+            v-if="progress?.phase !== 'downloading' && progress?.phase !== 'downloaded'"
+            type="button"
+            class="ml-2 h-8 rounded-md bg-accent px-3 font-medium text-white hover:bg-accent-hover"
+            @click="downloadUpdate"
+          >
+            ดาวน์โหลดอัปเดต
+          </button>
         </template>
         <template v-else>
           คุณใช้เวอร์ชันล่าสุดแล้ว ({{ update.current }})
         </template>
+      </p>
+      <p
+        v-if="progress?.phase === 'downloading'"
+        role="status"
+      >
+        กำลังดาวน์โหลด {{ progress.version }} … {{ progress.percent }}%
+      </p>
+      <div
+        v-if="progress?.phase === 'downloaded'"
+        class="flex items-center gap-2"
+      >
+        <span role="status">ดาวน์โหลด {{ progress.version }} เสร็จแล้ว</span>
+        <button
+          type="button"
+          class="h-8 rounded-md bg-accent px-3 font-medium text-white hover:bg-accent-hover"
+          @click="installUpdate"
+        >
+          ติดตั้งและเปิดแอปใหม่
+        </button>
+      </div>
+      <p
+        v-if="progress?.phase === 'error'"
+        class="text-status-missing"
+        role="alert"
+      >
+        {{ progress.message }}
       </p>
       <p
         v-if="updateError"
@@ -111,7 +162,7 @@ const links = [
         {{ updateError }}
       </p>
       <p class="text-caption text-text-muted">
-        แอปไม่อัปเดตตัวเอง ดาวน์โหลดตัวติดตั้งจากหน้า Releases แล้วติดตั้งทับ ข้อมูลจะอยู่ครบ
+        อัปเดตเกิดขึ้นเมื่อคุณกดเท่านั้น ตัวติดตั้งยังไม่ได้ sign (ตรวจความสมบูรณ์ด้วย SHA-512 จาก release) และข้อมูลของคุณจะอยู่ครบหลังติดตั้ง
       </p>
     </section>
   </div>

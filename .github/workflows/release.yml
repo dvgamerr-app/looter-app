@@ -45,4 +45,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" --draft --generate-notes --title "GameLooter $GITHUB_REF_NAME" \
-            release/*/GameLooter-Windows-*-Setup.exe release/*/GameLooter-Windows-*-Setup.exe.blockmap
+            release/*/GameLooter-Windows-*-Setup.exe release/*/GameLooter-Windows-*-Setup.exe.blockmap release/*/latest.yml

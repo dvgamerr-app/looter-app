@@ -1,6 +1,7 @@
 import type { BackupService } from '../../backup/backup-service'
 import type { HotkeyManager } from '../../hotkeys/hotkey-manager'
 import type { CaptureController } from '../../windows/capture-window'
+import type { Updater } from '../../updater/updater'
 import type { OverlayController } from '../../windows/overlay-window'
 import type { AppContext } from '../context'
 import { registerUnimplementedChannels } from '../register'
@@ -22,13 +23,14 @@ export interface HandlerServices {
   overlay: OverlayController
   capture: CaptureController
   backup: BackupService
+  updater: Updater
 }
 
 /** Registers every handler built so far; the rest of the contract answers "not supported yet". */
 export function registerIpcHandlers(context: AppContext, services: HandlerServices): void {
   registerProfileHandlers(context, services.overlay)
   registerSettingsHandlers(context, services.hotkeys)
-  registerAppHandlers(context)
+  registerAppHandlers(context, services.updater)
   registerItemHandlers(context)
   registerRecipeHandlers(context)
   registerQuestHandlers(context)

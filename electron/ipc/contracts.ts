@@ -286,6 +286,14 @@ export interface UpdateInfo {
   url: string
 }
 
+export interface UpdateProgress {
+  phase: 'idle' | 'downloading' | 'downloaded' | 'error'
+  /** 0 to 100 while downloading. */
+  percent: number
+  version: string | null
+  message?: string
+}
+
 export interface AppInfo {
   name: string
   version: string
@@ -395,6 +403,9 @@ export interface InvokeContract {
   'app:cleanImages': [void, { removedFiles: number; clearedItems: number }]
   /** Manual check against the latest GitHub release; the app never updates itself. */
   'app:checkUpdate': [void, UpdateInfo]
+  /** Downloads the update found by the check; the installer is only started by `app:installUpdate`. */
+  'app:downloadUpdate': [void, null]
+  'app:installUpdate': [void, null]
 }
 
 export interface RecipeInput {
@@ -451,6 +462,7 @@ export interface EventContract {
   'overlay:changed': OverlayState
   'settings:changed': SettingsState
   'capture:changed': CaptureEvent
+  'update:changed': UpdateProgress
   'capture:frame': { frameUrl: string; displayBounds: Bounds; imageWidth: number; imageHeight: number }
 }
 
@@ -477,13 +489,13 @@ export const INVOKE_CHANNELS = [
   'capture:importFile', 'capture:importPath', 'capture:listPending', 'capture:discard',
   'settings:get', 'settings:update', 'settings:setHotkey', 'settings:resetHotkeys', 'settings:retryHotkeys',
   'backup:pickPath', 'backup:export', 'backup:inspect', 'backup:restore',
-  'app:getInfo', 'app:openDataFolder', 'app:cleanImages', 'app:checkUpdate',
+  'app:getInfo', 'app:openDataFolder', 'app:cleanImages', 'app:checkUpdate', 'app:downloadUpdate', 'app:installUpdate',
 ] as const satisfies readonly InvokeChannel[]
 
 export const EVENT_CHANNELS = [
   'profile:changed', 'items:changed', 'recipes:changed', 'quests:changed', 'tracking:changed',
   'inventory:changed', 'gathering:changed', 'overlay:changed', 'settings:changed', 'capture:changed',
-  'capture:frame',
+  'capture:frame', 'update:changed',
 ] as const satisfies readonly EventChannel[]
 
 type MissingInvoke = Exclude<InvokeChannel, (typeof INVOKE_CHANNELS)[number]>

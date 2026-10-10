@@ -6,6 +6,15 @@
   "appId": "com.dvgamerr.app.looter",
   "asar": true,
   "npmRebuild": false,
+  // Tells electron-updater where releases live and makes electron-builder write latest.yml. Publishing itself is
+  // done by the release workflow (the build script passes --publish never).
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "dvgamerr-app",
+      "repo": "looter-app"
+    }
+  ],
   "productName": "GameLooter",
   "directories": {
     "output": "release/${version}"

@@ -1,6 +1,7 @@
 import { app, BrowserWindow, dialog, session } from 'electron'
 import path from 'node:path'
 import { createBackupService } from './backup/backup-service'
+import { createUpdater } from './updater/updater'
 import { backupsDir, closeDatabase, dataDir, DatabaseOpenError, openDatabase } from './database'
 import { createGatheringService } from './gathering/service'
 import { registerImageHandler, registerImageScheme } from './images/image-protocol'
@@ -133,7 +134,7 @@ if (!app.requestSingleInstanceLock()) {
           }, afterMs)
         },
       })
-      registerIpcHandlers(context, { hotkeys, overlay, capture, backup })
+      registerIpcHandlers(context, { hotkeys, overlay, capture, backup, updater: createUpdater() })
 
       // The app never asks for browser permissions; screen capture happens in the main process only (F10-R11).
       session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false))

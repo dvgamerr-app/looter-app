@@ -2,11 +2,12 @@ import { app, shell } from 'electron'
 import { dataDir } from '../../database'
 import { cleanupOrphanImages } from '../../images/orphans'
 import { checkForUpdate } from '../../updater/check-update'
+import type { Updater } from '../../updater/updater'
 import type { AppContext } from '../context'
 import { AppError } from '../errors'
 import { handle } from '../register'
 
-export function registerAppHandlers({ db, notify, settings }: AppContext): void {
+export function registerAppHandlers({ db, notify, settings }: AppContext, updater: Updater): void {
   handle('app:getInfo', () => ({
     name: 'GameLooter',
     version: app.getVersion(),
@@ -24,6 +25,14 @@ export function registerAppHandlers({ db, notify, settings }: AppContext): void 
   })
 
   handle('app:checkUpdate', () => checkForUpdate())
+  handle('app:downloadUpdate', async () => {
+    await updater.download()
+    return null
+  })
+  handle('app:installUpdate', () => {
+    updater.install()
+    return null
+  })
 
   // Manual cleanup: files nothing refers to are deleted and items whose file is gone lose their image paths.
   handle('app:cleanImages', () => {

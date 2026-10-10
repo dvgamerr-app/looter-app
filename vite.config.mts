@@ -28,9 +28,9 @@ export default defineConfig({
         entry: 'electron/main.ts',
         vite: {
           build: {
-            // better-sqlite3 locates its native addon relative to its own files, so it must stay a
-            // runtime require and never be bundled into dist-electron/main.js.
-            rolldownOptions: { external: ['better-sqlite3'] },
+            // better-sqlite3 locates its native addon relative to its own files and electron-updater loads its
+            // dependencies dynamically, so both stay runtime requires and are never bundled into dist-electron/main.js.
+            rolldownOptions: { external: ['better-sqlite3', 'electron-updater'] },
           },
         },
       },
