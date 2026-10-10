@@ -1,6 +1,7 @@
 import { app, BrowserWindow, dialog, session } from 'electron'
 import path from 'node:path'
-import { backupsDir, closeDatabase, DatabaseOpenError, openDatabase } from './database'
+import { createBackupService } from './backup/backup-service'
+import { backupsDir, closeDatabase, dataDir, DatabaseOpenError, openDatabase } from './database'
 import { createGatheringService } from './gathering/service'
 import { registerImageHandler, registerImageScheme } from './images/image-protocol'
 import { createPendingStore } from './images/pending-store'
@@ -112,7 +113,26 @@ if (!app.requestSingleInstanceLock()) {
             .then(() => overlay.focusMainWindow())
             .catch(reportCaptureFailure),
       })
-      registerIpcHandlers(context, { hotkeys, overlay, capture })
+      const backup = createBackupService({
+        getDb: () => db,
+        migrations,
+        appVersion: app.getVersion(),
+        userDataDir: app.getPath('userData'),
+        dataDir: dataDir(),
+        backupsDir: backupsDir(),
+        // The folders are about to be swapped, so everything that holds a file open lets go of it first.
+        prepareForSwap: () => {
+          hotkeys.unregisterAll()
+          capture.cancel()
+          overlay.destroy()
+          closeDatabase()
+        },
+        relaunch: () => {
+          app.relaunch()
+          app.exit(0)
+        },
+      })
+      registerIpcHandlers(context, { hotkeys, overlay, capture, backup })
 
       // The app never asks for browser permissions; screen capture happens in the main process only (F10-R11).
       session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false))

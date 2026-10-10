@@ -33,6 +33,15 @@ git diff --check
 
 ## Optimization and technical-debt log
 
+### 2026-10-10 (Phases 3 to 5)
+
+- Overlay (`electron/windows/overlay-window.ts`, `src/overlay/`): created lazily and then only hidden, View mode is click-through and unfocusable, Interactive mode takes input, topmost is re-asserted every 2 s while visible, bounds are saved with a 200 ms debounce and constrained to a connected display. A hidden overlay is excluded from `broadcast()` (`suppressEventsFor`) and gets one fresh push when shown. The app quits explicitly when the main window closes, because `window-all-closed` never fires while the hidden overlay window exists.
+- Hotkeys (`electron/hotkeys/hotkey-manager.ts`): every action registers on its own and the real result feeds `settings.hotkeyStatus`; invalid, conflicting and refused accelerators keep the previous registration.
+- Capture (`electron/windows/capture-window.ts`, `electron/capture/screen-capture.ts`, `src/capture/`): the display under the cursor is grabbed at physical resolution, black frames are detected by sampling a 16x16 grid, the crop multiplies the CSS rectangle by the display scale, and the result enters the pending store. The app denies every browser permission request; screen capture happens in the main process only.
+- Backup (`electron/backup/backup-service.ts`, fflate): export snapshots with `db.backup()`; restore validates the manifest, entry names (zip slip) and the extracted database (`integrity_check`, `user_version`, `foreign_key_check`, migrations without a snapshot, orphan cleanup) before the data folder is swapped by two renames, with rollback. Tested against the real better-sqlite3 binary, which also caught a non-SQLite file escaping as a raw SQLite error.
+- Packaging: only the `win32-x64` better-sqlite3 addon ships (the installer went from 131.7 MB to 123.6 MB) and the unused Mulish, Poppins and orphaned Open Sans font files are gone.
+- Not done and needing the owner: an application icon of at least 256x256, the code-signing decision, `electron-updater` with the GitHub release workflow, the Windows 10/11 and DPI test matrix, performance measurements against a running game, and the first release. None of the windows (main, overlay, capture) has been exercised by this log's author; see the manual checklists in `docs/08-acceptance-criteria.md`.
+
 ### 2026-10-10 (Phase 2)
 
 - Added items, recipes, quests, tracking targets, manual inventory and the gathering list. `electron/domain/aggregation.ts`, `cycle.ts` and `expand.ts` are pure functions; the aggregation reproduces every worked example of Data Model section 7.4 (Requirement 3.5: 45/20/25, 28/68; nested, gather-override, surplus and priority-swap cases).

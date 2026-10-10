@@ -1,9 +1,11 @@
+import type { BackupService } from '../../backup/backup-service'
 import type { HotkeyManager } from '../../hotkeys/hotkey-manager'
 import type { CaptureController } from '../../windows/capture-window'
 import type { OverlayController } from '../../windows/overlay-window'
 import type { AppContext } from '../context'
 import { registerUnimplementedChannels } from '../register'
 import { registerAppHandlers } from './app'
+import { registerBackupHandlers } from './backup'
 import { registerCaptureHandlers } from './capture'
 import { registerGatheringHandlers } from './gathering'
 import { registerInventoryHandlers } from './inventory'
@@ -19,6 +21,7 @@ export interface HandlerServices {
   hotkeys: HotkeyManager
   overlay: OverlayController
   capture: CaptureController
+  backup: BackupService
 }
 
 /** Registers every handler built so far; the rest of the contract answers "not supported yet". */
@@ -34,5 +37,6 @@ export function registerIpcHandlers(context: AppContext, services: HandlerServic
   registerGatheringHandlers(context)
   registerCaptureHandlers(context, services.capture)
   registerOverlayHandlers(services.overlay)
+  registerBackupHandlers(services.backup)
   registerUnimplementedChannels()
 }

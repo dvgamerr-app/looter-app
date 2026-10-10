@@ -12,7 +12,15 @@
   },
   "files": [
     "dist",
-    "dist-electron"
+    "dist-electron",
+    // better-sqlite3 ships its C++ sources and the prebuilt addons of every platform; only the one for
+    // Windows x64 is needed at run time.
+    "!node_modules/better-sqlite3/deps/**",
+    "!node_modules/better-sqlite3/src/**",
+    "!node_modules/better-sqlite3/binding.gyp",
+    "!node_modules/better-sqlite3/prebuilds/darwin-*",
+    "!node_modules/better-sqlite3/prebuilds/linux*",
+    "!node_modules/better-sqlite3/prebuilds/win32-arm64.node"
   ],
   "win": {
     "target": [

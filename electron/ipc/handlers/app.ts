@@ -1,10 +1,11 @@
 import { app, shell } from 'electron'
 import { dataDir } from '../../database'
+import { cleanupOrphanImages } from '../../images/orphans'
 import type { AppContext } from '../context'
 import { AppError } from '../errors'
 import { handle } from '../register'
 
-export function registerAppHandlers({ db }: AppContext): void {
+export function registerAppHandlers({ db, notify, settings }: AppContext): void {
   handle('app:getInfo', () => ({
     name: 'GameLooter',
     version: app.getVersion(),
@@ -19,5 +20,13 @@ export function registerAppHandlers({ db }: AppContext): void {
     const failure = await shell.openPath(dataDir())
     if (failure) throw new AppError('IO', 'เปิดโฟลเดอร์ข้อมูลไม่สำเร็จ', { reason: failure })
     return null
+  })
+
+  // Manual cleanup: files nothing refers to are deleted and items whose file is gone lose their image paths.
+  handle('app:cleanImages', () => {
+    const result = cleanupOrphanImages(db, dataDir())
+    const profileId = settings.getActiveProfileId()
+    if (profileId !== null && result.clearedItems > 0) notify.items(profileId)
+    return result
   })
 }

@@ -67,6 +67,7 @@ export async function migrate(
   db: Db,
   migrations: Migration[],
   backupsDir: string,
+  { snapshot = true }: { snapshot?: boolean } = {},
 ): Promise<{ from: number; to: number }> {
   assertSequential(migrations)
   const current = db.pragma('user_version', { simple: true }) as number
@@ -77,7 +78,8 @@ export async function migrate(
   if (pending.length === 0) return { from: current, to: latest }
 
   let backupPath: string | null = null
-  if (current > 0) {
+  // A restore migrates a file that is itself a backup, so it skips the snapshot (Data Model section 6.3).
+  if (current > 0 && snapshot) {
     mkdirSync(backupsDir, { recursive: true })
     backupPath = path.join(backupsDir, `gamelooter-v${current}-${fileStamp()}.sqlite`)
     await db.backup(backupPath)

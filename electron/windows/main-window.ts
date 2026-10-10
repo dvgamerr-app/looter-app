@@ -1,4 +1,5 @@
-import { BrowserWindow } from 'electron'
+import { BrowserWindow, shell } from 'electron'
+import { pathToFileURL } from 'node:url'
 import path from 'node:path'
 import { trustSender } from '../ipc/register'
 import type { SettingsService } from '../settings/settings-service'
@@ -45,6 +46,16 @@ export function createMainWindow({ settings, distDir, publicDir, devServerUrl }:
     },
   })
   trustSender(win.webContents)
+
+  // Links open in the user's browser and the window never navigates away from the app's own pages.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https://')) void shell.openExternal(url)
+    return { action: 'deny' }
+  })
+  const appOrigin = devServerUrl ?? pathToFileURL(distDir).toString()
+  win.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith(appOrigin)) event.preventDefault()
+  })
   if (saved.maximized) win.maximize()
   win.once('ready-to-show', () => win.show())
 

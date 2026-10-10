@@ -377,12 +377,14 @@ export interface InvokeContract {
   'settings:retryHotkeys': [void, SettingsState]
 
   'backup:pickPath': [{ mode: 'save' | 'open' }, string | null]
-  'backup:export': [string, { path: string }]
+  'backup:export': [string, { path: string; bytes: number; profileCount: number; itemCount: number }]
   'backup:inspect': [string, BackupSummary]
   'backup:restore': [string, null]
 
   'app:getInfo': [void, AppInfo]
   'app:openDataFolder': [void, null]
+  /** Manual cleanup of image files and image paths that no longer match (Data Model section 5.4). */
+  'app:cleanImages': [void, { removedFiles: number; clearedItems: number }]
 }
 
 export interface RecipeInput {
@@ -465,7 +467,7 @@ export const INVOKE_CHANNELS = [
   'capture:importFile', 'capture:importPath', 'capture:listPending', 'capture:discard',
   'settings:get', 'settings:update', 'settings:setHotkey', 'settings:resetHotkeys', 'settings:retryHotkeys',
   'backup:pickPath', 'backup:export', 'backup:inspect', 'backup:restore',
-  'app:getInfo', 'app:openDataFolder',
+  'app:getInfo', 'app:openDataFolder', 'app:cleanImages',
 ] as const satisfies readonly InvokeChannel[]
 
 export const EVENT_CHANNELS = [
