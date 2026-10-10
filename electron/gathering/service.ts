@@ -78,6 +78,18 @@ export function createGatheringService(repos: Repositories, settings: SettingsSe
     return { ...result, items: rows, craftPlan, perTarget }
   }
 
+  // The dashboard shows the progress of every profile; computing them all for each profile list would be wasteful,
+  // so results are kept until the next mutation (every mutation calls `schedule`).
+  const progressCache = new Map<number, GatheringResult['overall']>()
+  const progress = (profileId: number): GatheringResult['overall'] => {
+    let overall = progressCache.get(profileId)
+    if (!overall) {
+      overall = compute(profileId).overall
+      progressCache.set(profileId, overall)
+    }
+    return overall
+  }
+
   const get = (): GatheringResult => {
     const profileId = settings.getActiveProfileId()
     return profileId === null ? EMPTY : compute(profileId)
@@ -93,7 +105,16 @@ export function createGatheringService(repos: Repositories, settings: SettingsSe
     }
   }, RECOMPUTE_DELAY_MS)
 
-  return { compute, get, schedule: (): void => schedule(), flush: (): void => schedule.flush() }
+  return {
+    compute,
+    get,
+    progress,
+    schedule: (): void => {
+      progressCache.clear()
+      schedule()
+    },
+    flush: (): void => schedule.flush(),
+  }
 }
 
 export type GatheringService = ReturnType<typeof createGatheringService>

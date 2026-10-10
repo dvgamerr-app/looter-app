@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
+import { strFromU8, strToU8, unzipSync, zip, type Zippable } from 'fflate'
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { migrate, SchemaTooNewError } from '../database/migrate'
@@ -13,6 +13,7 @@ import { fileStamp } from '../utils/time'
 const FORMAT = 'gamelooter-backup'
 const FORMAT_VERSION = 1
 const KEPT_PRE_RESTORE = 1
+const RESTART_AFTER_FAILURE_MS = 3000
 
 interface Manifest {
   format: string
@@ -33,8 +34,8 @@ export interface BackupDeps {
   backupsDir: string
   /** Closes the database, the overlay, the capture window and the hotkeys before the folders are swapped. */
   prepareForSwap: () => void
-  /** Starts the app again on the restored data. */
-  relaunch: () => void
+  /** Starts the app again; `afterMs` delays the restart so an error can still be shown. */
+  relaunch: (afterMs?: number) => void
 }
 
 const invalid = (message = 'ไฟล์นี้ไม่ใช่ Backup ของ GameLooter หรือ manifest.json เสียหาย'): AppError =>
@@ -153,7 +154,10 @@ export function createBackupService(deps: BackupDeps) {
         if (existsSync(absolute)) files[row.path] = [new Uint8Array(readFileSync(absolute)), { level: 0 }]
       }
 
-      const archive = zipSync(files)
+      // The asynchronous API keeps the main process responsive while the archive is built.
+      const archive = await new Promise<Uint8Array>((resolve, reject) => {
+        zip(files, (error, data) => (error ? reject(error) : resolve(data)))
+      })
       const partial = `${target}.tmp`
       try {
         writeFileSync(partial, archive)
@@ -225,23 +229,31 @@ export function createBackupService(deps: BackupDeps) {
       throw error
     }
 
-    // From here on the current data is replaced: close everything that holds files open, then swap.
+    // From here on the app has let go of its database, so every outcome ends in a restart: on success the app opens
+    // the restored data, on failure it opens the original data again. The restart is delayed so the error is shown.
     deps.prepareForSwap()
     const previous = path.join(deps.backupsDir, `pre-restore-${stamp}`)
+    const abort = (error: AppError): never => {
+      rmSync(temp, { recursive: true, force: true })
+      deps.relaunch(RESTART_AFTER_FAILURE_MS)
+      throw error
+    }
     mkdirSync(deps.backupsDir, { recursive: true })
     try {
       renameSync(deps.dataDir, previous)
     } catch (error) {
-      rmSync(temp, { recursive: true, force: true })
-      throw new AppError('IO', 'สำรองข้อมูลเดิมไม่สำเร็จ ข้อมูลเดิมไม่ถูกแตะ', { reason: (error as Error).message })
+      abort(new AppError('IO', 'สำรองข้อมูลเดิมไม่สำเร็จ ข้อมูลเดิมไม่ถูกแตะ แอปจะเปิดใหม่', { reason: (error as Error).message }))
     }
     try {
       renameSync(temp, deps.dataDir)
     } catch (error) {
       // Put the original folder back so no data is lost (F11-R13).
-      renameSync(previous, deps.dataDir)
-      rmSync(temp, { recursive: true, force: true })
-      throw new AppError('IO', 'กู้คืนข้อมูลไม่สำเร็จ ข้อมูลเดิมถูกคืนกลับแล้ว', { backup: previous, reason: (error as Error).message })
+      try {
+        renameSync(previous, deps.dataDir)
+      } catch (rollbackError) {
+        abort(new AppError('IO', `กู้คืนไม่สำเร็จและคืนข้อมูลเดิมไม่ได้ ข้อมูลเดิมอยู่ที่ ${previous}`, { backup: previous, reason: (rollbackError as Error).message }))
+      }
+      abort(new AppError('IO', 'กู้คืนข้อมูลไม่สำเร็จ ข้อมูลเดิมถูกคืนกลับแล้ว แอปจะเปิดใหม่', { backup: previous, reason: (error as Error).message }))
     }
 
     // Keep only the newest pre-restore folder.

@@ -34,6 +34,8 @@ interface Session {
 export function createCaptureController(deps: CaptureDeps) {
   const { pending, overlay, getActiveProfileId, getMainWindow, distDir, devServerUrl } = deps
   let session: Session | null = null
+  // True from the moment a capture is requested until its window exists, so a second request in that gap is ignored.
+  let starting = false
 
   const raiseMainWindow = (): void => {
     const main = getMainWindow()
@@ -61,10 +63,11 @@ export function createCaptureController(deps: CaptureDeps) {
 
     /** Starts a capture; a second request while one is running is ignored (F10-R15). */
     async start(): Promise<void> {
-      if (session) return
+      if (session || starting) return
       const profileId = getActiveProfileId()
       if (profileId === null) throw new AppError('NOT_FOUND', 'ยังไม่มี Game Profile ที่ใช้งานอยู่')
 
+      starting = true
       // The overlay hides first so it does not end up in the screenshot.
       overlay.suspend()
       let frame
@@ -73,10 +76,12 @@ export function createCaptureController(deps: CaptureDeps) {
         await new Promise((resolve) => setTimeout(resolve, 80))
         frame = await grabDisplayUnderCursor()
       } catch (error) {
+        starting = false
         overlay.resume()
         return fail(error instanceof AppError ? error : new AppError('CAPTURE_FAILED', 'จับภาพหน้าจอไม่ได้', { reason: 'unknown' }))
       }
       if (isBlackFrame(frame.image)) {
+        starting = false
         overlay.resume()
         return fail(
           new AppError('CAPTURE_FAILED', 'จับภาพหน้าจอไม่ได้ เกมอาจอยู่ในโหมด Fullscreen Exclusive ลองเปลี่ยนเกมเป็น Borderless Windowed หรือใช้ Snipping Tool', { reason: 'black' }),
@@ -106,6 +111,7 @@ export function createCaptureController(deps: CaptureDeps) {
       })
       trustSender(window.webContents)
       session = { window, image, display, profileId }
+      starting = false
       window.setAlwaysOnTop(true, 'screen-saver')
       window.on('closed', () => {
         // Closed by the user (for example Alt+F4) without choosing a region.

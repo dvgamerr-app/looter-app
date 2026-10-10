@@ -92,9 +92,17 @@ export function createHotkeyManager(settings: SettingsService, handlers: Partial
 
     /** Restores one action or all of them to the defaults (F11-R5). */
     reset(action?: HotkeyAction): void {
+      const targets = action ? [action] : ACTIONS
       const next: Hotkeys = { ...settings.getHotkeys() }
-      for (const target of action ? [action] : ACTIONS) next[target] = DEFAULT_HOTKEYS[target]
-      for (const target of action ? [action] : ACTIONS) register(target, next[target])
+      for (const target of targets) next[target] = DEFAULT_HOTKEYS[target]
+      // A default that another, untouched action still holds would be refused by the OS as already taken.
+      for (const target of targets) {
+        const holder = ACTIONS.find((other) => !targets.includes(other) && normalise(next[other]) === normalise(next[target]) && next[target] !== '')
+        if (holder) throw new AppError('HOTKEY_CONFLICT', 'ปุ่มเริ่มต้นนี้ถูกใช้กับรายการอื่นอยู่ ให้เปลี่ยนรายการนั้นก่อน', { action: holder })
+      }
+      // Let go of every affected key first so the defaults cannot collide with each other while swapping back.
+      for (const target of targets) unregister(target)
+      for (const target of targets) register(target, next[target])
       settings.setHotkeys(next)
     },
 

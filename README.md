@@ -1,6 +1,6 @@
 # GameLooter
 
-GameLooter is a Vue 3 and Electron desktop app for tracking game items, crafting materials and quest requirements across many games, with a Windows overlay for use while playing. Phase 1 of the roadmap is in place: a SQLite data layer, typed IPC, an app shell and Game Profile management. Items, recipes, quests, the overlay and screen capture follow in later phases. The planning documents in `docs/` describe the target product and the development roadmap.
+GameLooter is a Vue 3 and Electron desktop app for tracking game items, crafting materials and quest requirements across many games, with a Windows overlay for use while playing. All five phases of the roadmap are written: a SQLite data layer with typed IPC, game profiles, items, recipes and quests with a shared gathering list, a Windows overlay with global hotkeys, region capture with clipboard and file import, and backup and restore. The window, overlay and capture flows still need a manual pass against a real game (see the checklists in `docs/08-acceptance-criteria.md`). The planning documents in `docs/` describe the target product and the development roadmap.
 
 Project links:
 

@@ -40,7 +40,8 @@ git diff --check
 - Capture (`electron/windows/capture-window.ts`, `electron/capture/screen-capture.ts`, `src/capture/`): the display under the cursor is grabbed at physical resolution, black frames are detected by sampling a 16x16 grid, the crop multiplies the CSS rectangle by the display scale, and the result enters the pending store. The app denies every browser permission request; screen capture happens in the main process only.
 - Backup (`electron/backup/backup-service.ts`, fflate): export snapshots with `db.backup()`; restore validates the manifest, entry names (zip slip) and the extracted database (`integrity_check`, `user_version`, `foreign_key_check`, migrations without a snapshot, orphan cleanup) before the data folder is swapped by two renames, with rollback. Tested against the real better-sqlite3 binary, which also caught a non-SQLite file escaping as a raw SQLite error.
 - Packaging: only the `win32-x64` better-sqlite3 addon ships (the installer went from 131.7 MB to 123.6 MB) and the unused Mulish, Poppins and orphaned Open Sans font files are gone.
-- Not done and needing the owner: the code-signing decision, `electron-updater` with the GitHub release workflow, the Windows 10/11 and DPI test matrix, performance measurements against a running game, and the first release. None of the windows (main, overlay, capture) has been exercised by this log's author; see the manual checklists in `docs/08-acceptance-criteria.md`.
+- Update check: `app:checkUpdate` only compares with the latest GitHub release and links to it (installers are unsigned, so no self-update); `.github/workflows/release.yml` builds a draft release on a `v*` tag and has never run on GitHub Actions.
+- Not done and needing the owner: the code-signing decision, self-updating through `electron-updater`, the Windows 10/11 and DPI test matrix, performance measurements against a running game, and the first release. None of the windows (main, overlay, capture) has been exercised by this log's author; see the manual checklists in `docs/08-acceptance-criteria.md`.
 
 ### 2026-10-10 (Phase 2)
 
@@ -85,5 +86,4 @@ git diff --check
 - The packaging build downloads Electron, 7-Zip and NSIS on first run, so it needs network access until those are cached.
 - Electron 44 exposes the clipboard only in the main process and only through the Promise-based W3C-style API (`clipboard.read()` returning `ClipboardItem` objects); `readImage` and the other narrow helpers no longer exist.
 - The Content-Security-Policy in `index.html` is the production value; `vite.config.mts` relaxes `style-src` and `connect-src` only under `vite serve` for HMR. It has not yet been observed in a running window, so confirm there is no CSP violation in the DevTools console and no Electron security warning the first time the app is launched.
-- The packaged app unpacks every platform prebuild of better-sqlite3 (about 8 `.node` files); trimming it to `win32-x64` is a Phase 5 packaging task.
 - Run the application with `ELECTRON_RUN_AS_NODE` unset: it is set in some shells (including the VS Code extension host) and makes `electron.exe` behave as plain Node.js, so `app` is undefined.

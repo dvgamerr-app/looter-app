@@ -39,6 +39,7 @@ export function createOverlayController(deps: OverlayDeps) {
   let scope: 'all' | number = 'all'
   let topmostTimer: ReturnType<typeof setInterval> | null = null
   let suspended = false
+  let watchingMain = false
 
   const pinnedTargets = () => {
     const profileId = settings.getActiveProfileId()
@@ -180,7 +181,13 @@ export function createOverlayController(deps: OverlayDeps) {
 
   // The main window losing focus is the moment a game most often takes the top back.
   const watchMainWindow = (): void => {
-    getMainWindow()?.on('blur', ensureTopmost)
+    const main = getMainWindow()
+    if (!main || watchingMain) return
+    watchingMain = true
+    main.on('blur', ensureTopmost)
+    main.once('closed', () => {
+      watchingMain = false
+    })
   }
 
   const api = {

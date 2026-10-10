@@ -126,9 +126,11 @@ if (!app.requestSingleInstanceLock()) {
           overlay.destroy()
           closeDatabase()
         },
-        relaunch: () => {
-          app.relaunch()
-          app.exit(0)
+        relaunch: (afterMs = 0) => {
+          setTimeout(() => {
+            app.relaunch()
+            app.exit(0)
+          }, afterMs)
         },
       })
       registerIpcHandlers(context, { hotkeys, overlay, capture, backup })
@@ -139,12 +141,13 @@ if (!app.requestSingleInstanceLock()) {
       hotkeys.registerAll()
       openMainWindow(settings)
       overlay.restoreOnStart()
-      // Order matters: the overlay flushes its last bounds into the database, so the database closes last (F12-R12).
+      // Order matters (F12-R12): the overlay flushes its last bounds in `before-quit`, the main window does the same
+      // when it closes, and `will-quit` comes after every window is gone, so the database is closed there.
       app.on('before-quit', () => {
         hotkeys.unregisterAll()
         overlay.destroy()
-        closeDatabase()
       })
+      app.on('will-quit', closeDatabase)
     })
     .catch((error: unknown) => {
       reportStartupFailure(error)

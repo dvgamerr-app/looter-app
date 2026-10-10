@@ -24,7 +24,7 @@ const toDto = (row: ProfileRow, progress: ProfileDto['progress']): ProfileDto =>
 export function registerProfileHandlers({ db, repos, settings, pending, gathering }: AppContext, overlay: OverlayController): void {
   const snapshot = (): ProfileList => ({
     activeProfileId: settings.getActiveProfileId(),
-    profiles: repos.profiles.list().map((row) => toDto(row, gathering.compute(row.id).overall)),
+    profiles: repos.profiles.list().map((row) => toDto(row, gathering.progress(row.id))),
   })
 
   /** Saves the new active profile and its last_opened_at in one transaction (F1-R4). */
@@ -51,7 +51,7 @@ export function registerProfileHandlers({ db, repos, settings, pending, gatherin
   handle('profiles:getActive', () => {
     const id = settings.getActiveProfileId()
     const row = id === null ? undefined : repos.profiles.get(id)
-    return row ? toDto(row, gathering.compute(row.id).overall) : null
+    return row ? toDto(row, gathering.progress(row.id)) : null
   })
 
   handle('profiles:create', (request) => {

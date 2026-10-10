@@ -24,10 +24,33 @@ const NAMED_KEYS: Record<string, string> = {
   Tab: 'Tab',
 }
 
+// The physical key (`event.code`) is used instead of `event.key`: the latter changes with the keyboard layout and
+// the Shift state, so Ctrl+Shift+O on a Thai layout or Shift+] on a US layout would give a different character.
+const PUNCTUATION: Record<string, string> = {
+  Minus: '-',
+  Equal: '=',
+  BracketLeft: '[',
+  BracketRight: ']',
+  Semicolon: ';',
+  Quote: "'",
+  Backquote: '`',
+  Backslash: '\\',
+  Comma: ',',
+  Period: '.',
+  Slash: '/',
+}
+
+function keyFromCode(event: KeyboardEvent): string {
+  if (/^Key[A-Z]$/.test(event.code)) return event.code.slice(3)
+  if (/^Digit[0-9]$/.test(event.code)) return event.code.slice(5)
+  if (/^F([1-9]|1[0-9]|2[0-4])$/.test(event.code)) return event.code
+  return PUNCTUATION[event.code] ?? NAMED_KEYS[event.key] ?? (event.key.length === 1 ? event.key.toUpperCase() : event.key)
+}
+
 /** Builds an Electron accelerator from the keys that were pressed, for example `CommandOrControl+Shift+O`. */
 function toAccelerator(event: KeyboardEvent): string | null {
   if (MODIFIER_KEYS.has(event.key)) return null
-  const key = NAMED_KEYS[event.key] ?? (event.key.length === 1 ? event.key.toUpperCase() : event.key)
+  const key = keyFromCode(event)
   const parts: string[] = []
   if (event.ctrlKey) parts.push('CommandOrControl')
   if (event.altKey) parts.push('Alt')
