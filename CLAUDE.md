@@ -2,11 +2,13 @@
 
 ## Working conventions
 
-- Use Bun 1.4.2 as the package manager and script runner, and keep `bun.lock` in sync with `package.json`. Node.js 24 LTS is needed only by `bun run typecheck`: vue-tsc patches tsc through Node's CommonJS loader, which Bun does not emulate, so under Bun alone it silently degrades to plain tsc and skips `.vue` files.
+- Use Bun 1.4.2 as the package manager and script runner, and keep `bun.lock` in sync with `package.json`. Node.js 24 LTS is needed only by `bun run typecheck`: vue-tsc patches tsc through Node's CommonJS loader, which Bun does not emulate, so under Bun alone it silently degrades to plain tsc and skips `.vue` files. When Node.js is not installed, run `ELECTRON_RUN_AS_NODE=1 node_modules/electron/dist/electron.exe node_modules/vue-tsc/bin/vue-tsc.js --noEmit -p tsconfig.app.json`: Electron bundles Node.js 24 and this reports `.vue` errors like the real check.
 - Only `electron` may run dependency lifecycle scripts (`trustedDependencies`). Bun's default trusted list would run the `electron-winstaller` install script, which needs a Node binary and only serves the unused Squirrel target.
 - Preserve the renderer/main/preload boundary. Renderer code must not import Node.js or Electron APIs; it reaches the main process only through the preload bridge. Keep `contextIsolation` and `sandbox` on and `nodeIntegration` off.
-- Write Electron, data-model, business-logic and IPC code in TypeScript 5.x. Do not use TypeScript 6 or 7. The legacy JavaScript modules `electron/database/`, `electron/settings/` and `electron/helper.js` are ESLint-ignored and type-checked with `checkJs: false` until the SQLite data layer replaces them; do not extend them.
-- Keep local database behavior in `electron/database/`; do not bypass it from Vue components.
+- Write Electron, data-model, business-logic and IPC code in TypeScript 5.x. Do not use TypeScript 6 or 7. There is no JavaScript left in `electron/`.
+- The renderer talks to the main process only through `window.api`, which `electron/preload.ts` builds from the channel allow-lists in `electron/ipc/contracts.ts`. To add a command, declare it in `InvokeContract` and `INVOKE_CHANNELS` (a compile-time check fails if they drift), then register it with `handle()` from `electron/ipc/register.ts`. Every handler validates its input and reads the active profile from the settings service; the renderer never sends a `profile_id`.
+- Keep local database behavior in `electron/database/`; do not bypass it from Vue components. Schema changes are new `electron/database/migrations/NNN-name.ts` files added to `migrations/index.ts`; never edit a shipped migration. Repositories prepare their statements once and use named parameters.
+- `electron/domain/` is pure business logic: ESLint forbids importing `electron`, `better-sqlite3`, Node.js modules or the database and IPC layers there. `electron/ipc/contracts.ts` is imported by the renderer as types, so it must never import Electron or Node.js.
 - Prefer semantic HTML and data-driven Vue templates over repeated markup or presentation-only wrappers. Components need multi-word names (`vue/multi-word-component-names`).
 - Style with Tailwind CSS 4 utilities. Tailwind is configured in `src/index.css` through `@import 'tailwindcss'` and the `@tailwindcss/vite` plugin; there is no `tailwind.config.js`, PostCSS or Sass. Add plain CSS with native nesting only for global behavior that utilities cannot express clearly.
 - Packaging targets Windows x64 only in `electron-builder.json5`. When a native module such as better-sqlite3 is added, keep it in `dependencies` and set `npmRebuild: false`, because the N-API prebuilds need no rebuild and the machine has no Python or build tools.
@@ -30,6 +32,16 @@ git diff --check
 `bun run typecheck` needs Node.js on PATH for the renderer part and fails loudly without it. There are no test scripts. Do not create or modify test scripts for new features unless explicitly asked, and do not claim that tests ran.
 
 ## Optimization and technical-debt log
+
+### 2026-10-10
+
+- Replaced the JSON data layer with SQLite (better-sqlite3 13.0.3): `electron/database/` opens the single connection (WAL, foreign keys, `quick_check`, quarantine of a corrupt file), `migrate.ts` snapshots an existing database before migrating and applies each migration in its own transaction, and `001-initial.ts` creates the nine tables of the data model. Repositories exist for every entity; profile and setting are complete, the rest are read-only until Phase 2.
+- Replaced the generic `window.ipcRenderer` bridge with typed IPC: `electron/ipc/contracts.ts` declares every channel of Feature Specification section 14, `register.ts` validates and normalises errors into `{ ok, data | error }` and rejects windows the app did not create, and channels whose feature has not been built answer with an `INTERNAL` "not supported yet" error.
+- Moved settings and window bounds into `app_setting` with per-field repair of invalid values, added the single-instance lock, the production CSP and the Game Profile handlers.
+- Built the app shell (hash router with six screens, title bar, collapsible sidebar, profile switcher, dialogs, toasts) and Game Profile create, rename, delete and switch. Phase 2 screens are placeholders.
+- Removed `electron/database/index.js`, `electron/settings/index.js`, `electron/helper.js`, `MaterialList.vue`, `jsonpath-plus` and `yaml`, plus the ESLint ignores and `allowJs` that supported them.
+- Verification: lint, `typecheck:main`, the renderer type check (through Electron's bundled Node.js), `vite build` and `bun run build` pass, and the packaged app contains `app.asar.unpacked/node_modules/better-sqlite3`. The migration runner, repositories and settings guards were exercised against the real better-sqlite3 binary under Electron 44's Node.js (fresh database, idempotent rerun, backup, rollback, downgrade refusal, numbering gap). The window itself has not been launched, so the CSP, the title bar overlay and the dialogs still need a manual pass.
+- `bun audit` still reports the same three build-time advisories (braces, sprintf-js, tmp).
 
 ### 2026-10-08
 
@@ -55,4 +67,6 @@ git diff --check
 - No code-signing certificate is configured. Windows SmartScreen warns on the unsigned installer.
 - The packaging build downloads Electron, 7-Zip and NSIS on first run, so it needs network access until those are cached.
 - Electron 44 exposes the clipboard only in the main process and only through the Promise-based W3C-style API (`clipboard.read()` returning `ClipboardItem` objects); `readImage` and the other narrow helpers no longer exist.
-- The renderer has no Content-Security-Policy yet; Electron logs a security warning at startup. Add one when the typed IPC layer lands.
+- The Content-Security-Policy in `index.html` is the production value; `vite.config.mts` relaxes `style-src` and `connect-src` only under `vite serve` for HMR. It has not yet been observed in a running window, so confirm there is no CSP violation in the DevTools console and no Electron security warning the first time the app is launched.
+- The packaged app unpacks every platform prebuild of better-sqlite3 (about 8 `.node` files); trimming it to `win32-x64` is a Phase 5 packaging task.
+- Run the application with `ELECTRON_RUN_AS_NODE` unset: it is set in some shells (including the VS Code extension host) and makes `electron.exe` behave as plain Node.js, so `app` is undefined.

@@ -1,6 +1,6 @@
 # เอกสารแผนงาน GameLooter
 
-เอกสารชุดนี้เป็นผลจากการตรวจสอบ Repository และการวางแผนก่อนเริ่มพัฒนา Universal RPG Item & Quest Tracker พร้อม Windows Overlay อัปเดตล่าสุด 2026-10-08 ยังไม่มีการเริ่ม Implementation ของ Features ใหม่ จนกว่าจะได้รับคำสั่ง
+เอกสารชุดนี้เป็นผลจากการตรวจสอบ Repository และการวางแผนก่อนเริ่มพัฒนา Universal RPG Item & Quest Tracker พร้อม Windows Overlay อัปเดตล่าสุด 2026-10-10 Phase 1 (Foundation) เขียนครบแล้วใน branch `feat/phase1-foundation` เหลือการตรวจด้วยมือบนหน้าต่างจริง (ดูหัวข้อด้านล่าง) ส่วน Phase 2 ขึ้นไปยังไม่เริ่ม
 
 | ลำดับ | เอกสาร | เนื้อหา |
 |---|---|---|
@@ -30,18 +30,18 @@
 
 | Phase | เป้าหมาย | Task | PR | สถานะ |
 |---|---|---|---|---|
-| 1 Foundation | Audit, Dependencies, Toolchain, Security baseline, SQLite, Typed IPC, App shell, Game Profile | Part A เสร็จ; Part B = P1-00 ถึง P1-16 | `feat/phase1-foundation` | Part A เสร็จ, Part B รอสั่งเริ่ม |
+| 1 Foundation | Audit, Dependencies, Toolchain, Security baseline, SQLite, Typed IPC, App shell, Game Profile | Part A เสร็จ; Part B = P1-00 ถึง P1-16 | `feat/phase1-foundation` | Part A และ Part B เขียนเสร็จ (P1-00 ถึง P1-14); รอตรวจด้วยมือบนหน้าต่างจริง (P1-15) และเปิด PR (P1-16) |
 | 2 Core Tracking | Item Library, ภาพจากไฟล์/Clipboard, Recipes (Nested, Cycle check), Quests, Inventory, Aggregation, Gathering List, Consume/Craft | P2-01 ถึง P2-18 | `feat/phase2-core-tracking` | ยังไม่เริ่ม |
 | 3 Windows Overlay | Overlay window, View/Interactive, Click-through, Opacity/Compact, Pin, Global Hotkeys | P3-01 ถึง P3-10 | `feat/phase3-overlay` | ยังไม่เริ่ม |
 | 4 Capture & Productivity | Region capture, Crop, Clipboard fallback (Win+Shift+S), Quick item creation, Gathering List filters | P4-01 ถึง P4-08 | `feat/phase4-capture` | ยังไม่เริ่ม |
 | 5 Optimization & Distribution | Performance, Backup/Restore/Export/Import, ไอคอน ≥256px, Signing, Update mechanism, Windows 10/11 matrix, Release | P5-01 ถึง P5-10 | `feat/phase5-distribution` | ยังไม่เริ่ม |
 
-### Phase 1 Part B (ขั้นตอนถัดไป)
+### Phase 1 Part B (สถานะ 2026-10-10)
 
-1. P1-01 ถึง P1-05: better-sqlite3 (`npmRebuild: false`), Connection, Migrations + `001-initial`, Repositories, Domain skeleton
-2. P1-06 ถึง P1-09: Typed IPC, Preload API แทน Generic bridge, CSP, Settings Store
-3. P1-10 ถึง P1-12: App shell (vue-router), Game Profile Management, Bootstrap Main Process ใหม่
-4. P1-13 ถึง P1-16: ลบ Legacy (`electron/database`, `electron/settings`, jsonpath-plus, yaml), อัปเดต README/CLAUDE.md, Verification Pass, เตรียม PR
+1. [เสร็จ] P1-01 ถึง P1-05: better-sqlite3 (`npmRebuild: false`), Connection, Migrations + `001-initial`, Repositories, Domain skeleton
+2. [เสร็จ] P1-06 ถึง P1-09: Typed IPC, Preload API แทน Generic bridge, CSP, Settings Store
+3. [เสร็จ] P1-10 ถึง P1-12: App shell (vue-router), Game Profile Management, Bootstrap Main Process ใหม่
+4. [เสร็จ P1-13 และ P1-14] ลบ Legacy, อัปเดต README/CLAUDE.md; [ค้าง] P1-15 Verification Pass บนหน้าต่างจริง (CSP, Title Bar, Dialog, Game Profile, ติดตั้ง Setup.exe) และ P1-16 เตรียม PR
 
 ### สิ่งที่ต้องตัดสินใจหรือเตรียมก่อนถึง Phase ที่เกี่ยวข้อง
 

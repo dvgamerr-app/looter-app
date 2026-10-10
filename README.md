@@ -1,6 +1,6 @@
 # GameLooter
 
-GameLooter is a Vue 3 and Electron desktop app for tracking game items, crafting materials and quest requirements across many games, with a Windows overlay for use while playing. The current renderer is a placeholder checklist, and the Electron main process owns the local data layer. The planning documents in `docs/` describe the target product and the development roadmap.
+GameLooter is a Vue 3 and Electron desktop app for tracking game items, crafting materials and quest requirements across many games, with a Windows overlay for use while playing. Phase 1 of the roadmap is in place: a SQLite data layer, typed IPC, an app shell and Game Profile management. Items, recipes, quests, the overlay and screen capture follow in later phases. The planning documents in `docs/` describe the target product and the development roadmap.
 
 Project links:
 
@@ -46,13 +46,23 @@ Generated output is written to `dist/`, `dist-electron/`, and `release/<version>
 
 ## Project structure
 
-- `src/` — Vue renderer, Tailwind CSS 4 utilities and the global stylesheet
-- `electron/main.ts` — Electron lifecycle and the application window
-- `electron/preload.ts` — sandboxed bridge between the renderer and the main process
-- `electron/database/` — legacy JSON data layer, scheduled to be replaced by SQLite
+- `src/` — Vue renderer: `router.ts`, `views/` (one per screen), `components/`, `stores/` (composables over `window.api`) and the Tailwind CSS 4 stylesheet
+- `electron/main.ts` — startup order: single-instance lock, database, migrations, settings, IPC handlers, main window
+- `electron/preload.ts` — builds `window.api` from the channel allow-list in `electron/ipc/contracts.ts`; the raw `ipcRenderer` is never exposed
+- `electron/ipc/` — typed contracts, handler registration with input validation, and the handlers per domain
+- `electron/database/` — SQLite connection, migrations and repositories
+- `electron/domain/` — pure business logic (aggregation, cycle check) with no Electron or SQLite imports
+- `electron/settings/` — settings store over the `app_setting` table
+- `electron/windows/` — window creation and bounds handling
 - `docs/` — repository audit, architecture, feature specification, data model, UI/UX plan, roadmap, risks and acceptance criteria
 - `electron-builder.json5` — Windows x64 packaging
 - `data/` — development data excluded from version control
+
+## Data and migrations
+
+The app stores everything in one SQLite database, `%APPDATA%\looter-app\data\gamelooter.sqlite` (WAL mode, foreign keys on), and Item images under `data\images\<profile_id>\`. Only the main process opens the database; the renderer reaches it through `window.api` and never receives a profile id, because every handler reads the active profile in the main process.
+
+The schema version lives in `PRAGMA user_version`. To change the schema, add `electron/database/migrations/NNN-name.ts` with the next number, export a `Migration` (`version`, `name`, `up(db)`), and append it to `electron/database/migrations/index.ts`. Never edit a migration that has shipped. Before applying anything to an existing database the runner saves a snapshot to `%APPDATA%\looter-app\backups\` (the latest five are kept), runs each migration in its own transaction and refuses to open a database written by a newer app version.
 
 ## Quality checks
 
@@ -68,7 +78,7 @@ bun audit
 git diff --check
 ```
 
-`bun run typecheck` runs vue-tsc under Node.js for the renderer and tsc under Bun for the Electron code. `bun audit` reports advisories inherited from Electron packaging and lint tooling; review the result before releasing, even when the application build succeeds.
+`bun run typecheck` runs vue-tsc under Node.js for the renderer and tsc under Bun for the Electron code. Without Node.js installed, `ELECTRON_RUN_AS_NODE=1 node_modules/electron/dist/electron.exe node_modules/vue-tsc/bin/vue-tsc.js --noEmit -p tsconfig.app.json` runs the renderer check with the Node.js bundled in Electron. `bun audit` reports advisories inherited from Electron packaging and lint tooling; review the result before releasing, even when the application build succeeds.
 
 ## Support
 
