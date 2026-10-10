@@ -16,10 +16,6 @@ export default withVueTs(
       'release/**',
       'node_modules/**',
       'data/**',
-      // Legacy JavaScript data layer from the scaffold. Phase 1 replaces it with the SQLite data layer.
-      'electron/database/**',
-      'electron/settings/**',
-      'electron/helper.js',
     ],
   },
   js.configs.recommended,
