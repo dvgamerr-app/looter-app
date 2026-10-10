@@ -102,7 +102,7 @@ Commits `c4ca8ba`, `ec244e1`, `7bab884` (migrate to Bun, simplify renderer templ
 
 งานที่อยู่ใน Working Tree แต่ยังไม่ commit: `README.md` และ `CLAUDE.md` (แก้ไข) และโฟลเดอร์ `docs/` (`docs/README.md` กับเอกสารแผนงานชุดนี้) ต้อง commit เป็น `docs:` ก่อนเริ่ม Part B (Task P1-00)
 
-### 2.2 สิ่งที่ยังไม่เริ่ม
+### 2.2 สิ่งที่ยังไม่เริ่ม (ณ 2026-10-08; ปัจจุบัน Phase 1 ถึง 5 เขียนครบแล้ว ดูตารางหัวข้อ 1)
 
 ตาม Requirement 1 ข้อ 3 และ Requirement 10 ยังไม่มีการเริ่ม Implementation ของ Feature ใหม่ Phase 1 Part B จะเริ่มเมื่อได้รับคำสั่งจากเจ้าของโปรเจกต์ โค้ดเดิมที่ยังอยู่และจะถูกแทนที่ใน Part B (ไม่แก้บั๊กในที่เดิม) ได้แก่
 

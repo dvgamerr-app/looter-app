@@ -1,6 +1,6 @@
 # เอกสารแผนงาน GameLooter
 
-เอกสารชุดนี้เป็นผลจากการตรวจสอบ Repository และการวางแผนก่อนเริ่มพัฒนา Universal RPG Item & Quest Tracker พร้อม Windows Overlay อัปเดตล่าสุด 2026-10-10 Phase 1 (Foundation) เขียนครบแล้วใน branch `feat/phase1-foundation` เหลือการตรวจด้วยมือบนหน้าต่างจริง (ดูหัวข้อด้านล่าง) ส่วน Phase 2 ขึ้นไปยังไม่เริ่ม
+เอกสารชุดนี้เป็นผลจากการตรวจสอบ Repository และการวางแผนก่อนเริ่มพัฒนา Universal RPG Item & Quest Tracker พร้อม Windows Overlay อัปเดตล่าสุด 2026-10-10 Phase 1 (Foundation) เขียนครบแล้วใน branch `feat/phase1-foundation` เหลือการตรวจด้วยมือบนหน้าต่างจริง (ดูหัวข้อด้านล่าง) Phase 2 ถึง 5 เขียนครบแล้วบน branch เดียวกัน (2026-10-10) เหลือการตรวจด้วยมือบนหน้าต่างจริง, ผลทดสอบ Windows 10/11 + DPI, การวัด performance และ release แรก ซึ่งต้องให้เจ้าของโปรเจกต์ทำ
 
 | ลำดับ | เอกสาร | เนื้อหา |
 |---|---|---|
