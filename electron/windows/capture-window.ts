@@ -123,7 +123,12 @@ export function createCaptureController(deps: CaptureDeps) {
       })
 
       // The frame goes to this window alone, never to a broadcast (Feature Specification 14.1).
+      window.webContents.once('did-fail-load', () => {
+        if (session?.window === window) fail(new AppError('CAPTURE_FAILED', 'เปิดหน้าต่างจับภาพไม่สำเร็จ', { reason: 'load' }))
+      })
       window.webContents.once('did-finish-load', () => {
+        // On a display with a different scale than the primary one Windows can size the new window wrongly.
+        window.setBounds(display.bounds)
         const size = image.getSize()
         window.webContents.send('capture:frame', {
           frameUrl: image.toDataURL(),
