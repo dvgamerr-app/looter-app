@@ -3,6 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { AppInfo } from '../../electron/ipc/contracts'
 import EmptyState from '../components/EmptyState.vue'
+import HotkeysSection from '../components/HotkeysSection.vue'
+import OverlaySection from '../components/OverlaySection.vue'
 import ProfileTable from '../components/ProfileTable.vue'
 import { useToasts } from '../stores/toasts'
 
@@ -14,8 +16,8 @@ interface Section {
 }
 
 const sections: Section[] = [
-  { id: 'hotkeys', label: 'Hotkeys', phase: 3 },
-  { id: 'overlay', label: 'Overlay', phase: 3 },
+  { id: 'hotkeys', label: 'Hotkeys' },
+  { id: 'overlay', label: 'Overlay' },
   { id: 'backup', label: 'Backup & Data', phase: 5 },
   { id: 'profiles', label: 'Profiles' },
   { id: 'about', label: 'About' },
@@ -94,7 +96,11 @@ const aboutRows = computed(() =>
         {{ current.label }}
       </h2>
 
-      <ProfileTable v-if="current.id === 'profiles'" />
+      <HotkeysSection v-if="current.id === 'hotkeys'" />
+
+      <OverlaySection v-else-if="current.id === 'overlay'" />
+
+      <ProfileTable v-else-if="current.id === 'profiles'" />
 
       <div
         v-else-if="current.id === 'about'"

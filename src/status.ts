@@ -20,3 +20,11 @@ export const statusFill: Record<StatusRole, string> = {
   missing: 'bg-status-missing',
   neutral: 'bg-status-neutral',
 }
+
+/** Lighter status colours for the dark overlay panel (UI/UX Design Plan 8.2). */
+export const statusTextOverlay: Record<StatusRole, string> = {
+  ok: 'text-status-ok-overlay',
+  warning: 'text-status-warning-overlay',
+  missing: 'text-status-missing-overlay',
+  neutral: 'text-text-muted',
+}

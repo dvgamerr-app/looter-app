@@ -5,9 +5,17 @@ import { AppError } from '../errors'
 import { toTrackingDto } from '../mappers'
 import { handle } from '../register'
 import { parseBoolean, parseCount, parseId, requireRecord } from '../validate'
+import type { OverlayController } from '../../windows/overlay-window'
 
-export function registerTrackingHandlers(context: AppContext): void {
-  const { repos, notify } = context
+export function registerTrackingHandlers(context: AppContext, overlay: OverlayController): void {
+  const { repos } = context
+  const notify = {
+    // Pins decide which targets the overlay can cycle through, so it is refreshed together with the push events.
+    tracking: (profileId: number): void => {
+      context.notify.tracking(profileId)
+      overlay.refresh()
+    },
+  }
 
   const list = (profileId: number) => repos.tracking.listLabelled(profileId).map(toTrackingDto)
   const one = (profileId: number, id: number) => {

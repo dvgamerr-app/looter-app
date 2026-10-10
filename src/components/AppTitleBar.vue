@@ -1,7 +1,33 @@
 <script setup lang="ts">
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { liveMessage } from '../stores/announcer'
+import { useProfiles } from '../stores/profiles'
+import { useSettings } from '../stores/settings'
+import { useToasts } from '../stores/toasts'
 import AppIcon from './AppIcon.vue'
 import ProfileSwitcher from './ProfileSwitcher.vue'
+
+const profiles = useProfiles()
+const { settings } = useSettings()
+const toasts = useToasts()
+
+// The button mirrors the overlay: pressed while it is on screen (UI/UX Design Plan 2.3).
+const overlayVisible = ref(false)
+void window.api.overlay.getState().then((result) => {
+  if (result.ok) overlayVisible.value = result.data.visible
+})
+const stop = window.api.on('overlay:changed', (state) => {
+  overlayVisible.value = state.visible
+})
+onBeforeUnmount(stop)
+
+const hasProfile = computed(() => profiles.state.activeProfileId !== null)
+const hotkey = computed(() => settings.value?.hotkeys.toggleOverlay ?? '')
+
+async function toggleOverlay(): Promise<void> {
+  const result = await window.api.overlay.toggle()
+  if (!result.ok) toasts.error(result.error.message)
+}
 </script>
 
 <template>
@@ -25,9 +51,12 @@ import ProfileSwitcher from './ProfileSwitcher.vue'
       </button>
       <button
         type="button"
-        disabled
-        class="flex h-8 items-center gap-2 rounded-md px-2 text-text-muted opacity-50"
-        title="Overlay จะพร้อมใช้งานใน Phase 3"
+        :disabled="!hasProfile"
+        class="flex h-8 items-center gap-2 rounded-md px-2 disabled:opacity-50"
+        :class="overlayVisible ? 'bg-accent text-white' : 'text-text-muted hover:bg-surface-3'"
+        :aria-pressed="overlayVisible"
+        :title="hasProfile ? `แสดง/ซ่อน Overlay${hotkey ? ` (${hotkey})` : ''}` : 'สร้าง Game Profile ก่อน'"
+        @click="toggleOverlay"
       >
         <AppIcon
           name="overlay"

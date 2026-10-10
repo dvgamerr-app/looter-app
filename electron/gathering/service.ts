@@ -6,6 +6,7 @@ import type {
   GatheringCraftRow,
   GatheringItemRow,
   GatheringResult,
+  GatheringTargetAllocation,
   IngredientInput,
 } from '../ipc/contracts'
 import { imageUrl } from '../images/image-store'
@@ -63,7 +64,18 @@ export function createGatheringService(repos: Repositories, settings: SettingsSe
       return [{ ...row, outputName: output.name, outputThumbnailUrl: imageUrl(output.thumbnailPath, output.updatedAt), ingredientsPerRun }]
     })
 
-    return { ...result, items: rows, craftPlan }
+    const targetInfo = new Map(repos.tracking.listLabelled(profileId).map((target) => [target.id, target]))
+    const perTarget: GatheringTargetAllocation[] = result.perTarget.flatMap((entry) => {
+      const info = targetInfo.get(entry.targetId)
+      if (!info) return []
+      const named = entry.rows.map((row) => {
+        const item = items.get(row.itemId)
+        return { ...row, name: item?.name ?? `#${row.itemId}`, thumbnailUrl: item ? imageUrl(item.thumbnailPath, item.updatedAt) : null }
+      })
+      return [{ ...entry, label: info.label, kind: info.kind, priority: info.priority, pinned: info.pinned === 1, rows: named }]
+    })
+
+    return { ...result, items: rows, craftPlan, perTarget }
   }
 
   const get = (): GatheringResult => {

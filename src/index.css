@@ -35,6 +35,13 @@
   --color-status-missing: #ef4444;
   --color-status-neutral: #6b7280;
 
+  /* Overlay */
+  --color-overlay-bg: #0b0d12;
+  --color-overlay-border: #2dd4bf;
+  --color-status-ok-overlay: #4ade80;
+  --color-status-warning-overlay: #fbbf24;
+  --color-status-missing-overlay: #f87171;
+
   /* Radius */
   --radius-sm: 4px;
   --radius-md: 6px;
@@ -109,4 +116,27 @@ body ::-webkit-scrollbar-thumb {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* The overlay page is a transparent window: only the panel is painted (UI/UX Design Plan 4.4). */
+html.overlay,
+html.overlay body {
+  background: transparent;
+}
+
+html.overlay body #app {
+  display: block;
+  height: 100%;
+}
+
+/* No transitions or animations anywhere in the overlay, to keep GPU and CPU use at a minimum (F9-R11). */
+html.overlay *,
+html.overlay *::before,
+html.overlay *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+html.overlay .overlay-text {
+  text-shadow: 0 1px 2px #000;
 }

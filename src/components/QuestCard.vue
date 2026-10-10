@@ -9,6 +9,7 @@ const props = defineProps<{
   quest: QuestDto
   /** Priority of the quest's tracking target, when it is tracked. */
   priority: number | null
+  pinned?: boolean
   allocation: TargetAllocation | undefined
   expanded?: boolean
 }>()
@@ -18,6 +19,7 @@ const emit = defineEmits<{
   setStatus: [status: QuestStatus]
   track: []
   untrack: []
+  togglePin: []
   remove: []
 }>()
 
@@ -150,6 +152,17 @@ const statusLabel: Record<QuestStatus, string> = { active: '● active', paused:
           @click="emit('untrack')"
         >
           Untrack
+        </button>
+        <button
+          v-if="priority !== null"
+          type="button"
+          class="h-8 rounded-md px-3 hover:bg-border"
+          :class="pinned ? 'bg-accent text-white' : 'bg-surface-3'"
+          :aria-pressed="pinned"
+          title="Pin ไว้ใน Overlay"
+          @click="emit('togglePin')"
+        >
+          📌 Pin
         </button>
         <button
           v-if="quest.status !== 'paused'"

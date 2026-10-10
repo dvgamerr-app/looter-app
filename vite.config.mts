@@ -41,4 +41,13 @@ export default defineConfig({
       // The renderer never uses Node.js APIs: it talks to the main process through the preload bridge only.
     }),
   ],
+  build: {
+    // Two renderer pages: the main window and the overlay, each its own entry (F9-R1).
+    rolldownOptions: {
+      input: {
+        main: path.join(import.meta.dirname, 'index.html'),
+        overlay: path.join(import.meta.dirname, 'overlay.html'),
+      },
+    },
+  },
 })

@@ -217,11 +217,29 @@ export interface GatheringCraftRow extends CraftPlanRow {
   ingredientsPerRun: IngredientInput[]
 }
 
+export interface GatheringTargetRow {
+  itemId: number
+  name: string
+  thumbnailUrl: string | null
+  need: number
+  allocated: number
+  missing: number
+}
+
+/** One tracked target with its allocation, named for display (F9-R8 shows pinned targets in the overlay). */
+export interface GatheringTargetAllocation extends TargetAllocation {
+  label: string
+  kind: TrackingKind
+  priority: number
+  pinned: boolean
+  rows: GatheringTargetRow[]
+}
+
 /** AggregationResult enriched with display data by the main process (Data Model section 7.5). */
 export interface GatheringResult extends Omit<AggregationResult, 'items' | 'craftPlan' | 'perTarget'> {
   items: GatheringItemRow[]
   craftPlan: GatheringCraftRow[]
-  perTarget: TargetAllocation[]
+  perTarget: GatheringTargetAllocation[]
 }
 
 export interface OverlayState {
@@ -230,7 +248,12 @@ export interface OverlayState {
   opacity: number
   compact: boolean
   bounds: Bounds | null
+  /** "all" or the id of a pinned tracking target. Temporary: it is not saved across launches (F9-R9). */
   scope: 'all' | number
+  /** Name of the target in view, for the header. */
+  scopeLabel: string | null
+  /** Pinned targets available to cycle through. */
+  pinnedTargetCount: number
 }
 
 export interface PendingImage {

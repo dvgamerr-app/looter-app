@@ -11,6 +11,8 @@ import { createRepositories } from './database/repositories'
 import { registerIpcHandlers } from './ipc/handlers'
 import { createSettingsService } from './settings/settings-service'
 import { createMainWindow } from './windows/main-window'
+import { createOverlayController } from './windows/overlay-window'
+import { createHotkeyManager } from './hotkeys/hotkey-manager'
 
 const DIST = path.join(__dirname, '../dist')
 const PUBLIC_DIR = app.isPackaged ? DIST : path.join(DIST, '../public')
@@ -67,8 +69,29 @@ if (!app.requestSingleInstanceLock()) {
       const gathering = createGatheringService(repos, settings)
       const pending = createPendingStore()
       registerImageHandler()
-      registerIpcHandlers({ db, repos, settings, gathering, pending, notify: createNotifier(gathering) })
+      const overlay = createOverlayController({
+        settings,
+        repos,
+        gathering,
+        getMainWindow: () => mainWindow,
+        distDir: DIST,
+        devServerUrl: VITE_DEV_SERVER_URL,
+      })
+      // Capture and clipboard import get their handlers in Phase 4; the other four act on the overlay.
+      const hotkeys = createHotkeyManager(settings, {
+        toggleOverlay: () => overlay.toggle(),
+        toggleOverlayMode: () => overlay.toggleMode(),
+        overlayNextTarget: () => overlay.cycleScope(1),
+        overlayPrevTarget: () => overlay.cycleScope(-1),
+      })
+      registerIpcHandlers({ db, repos, settings, gathering, pending, notify: createNotifier(gathering) }, { hotkeys, overlay })
+      hotkeys.registerAll()
       openMainWindow(settings)
+      overlay.restoreOnStart()
+      app.on('before-quit', () => {
+        hotkeys.unregisterAll()
+        overlay.destroy()
+      })
     })
     .catch((error: unknown) => {
       reportStartupFailure(error)

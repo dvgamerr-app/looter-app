@@ -37,8 +37,10 @@ export function createSettingsService(repo: SettingRepository, profiles: Profile
   let windowState: WindowSetting
   let preferences: Preferences
   let listener: ((state: SettingsState) => void) | null = null
+  let statusProvider: (() => Record<HotkeyAction, HotkeyStatus>) | null = null
 
   const hotkeyStatus = (): Record<HotkeyAction, HotkeyStatus> => {
+    if (statusProvider) return statusProvider()
     const status = {} as Record<HotkeyAction, HotkeyStatus>
     for (const [action, accelerator] of Object.entries(hotkeys) as Array<[HotkeyAction, string]>) {
       status[action] = accelerator === '' ? 'disabled' : 'pending'
@@ -82,6 +84,26 @@ export function createSettingsService(repo: SettingRepository, profiles: Profile
     },
 
     getState,
+    getHotkeys: (): Hotkeys => ({ ...hotkeys }),
+    getOverlay: (): OverlaySetting => ({ ...overlay }),
+
+    /** The hotkey manager reports the real registration result through this provider (F11-R4). */
+    setHotkeyStatusProvider(provider: () => Record<HotkeyAction, HotkeyStatus>): void {
+      statusProvider = provider
+    },
+
+    /** Saves the accelerators and announces the new state, including the registration status. */
+    setHotkeys(next: Hotkeys): void {
+      hotkeys = { ...next }
+      repo.set('hotkeys', hotkeys)
+      listener?.(getState())
+    },
+
+    /** Announces a change that did not go through `update`, such as a hotkey registration result. */
+    notify(): void {
+      listener?.(getState())
+    },
+
     getActiveProfileId: (): number | null => activeProfileId,
     getWindowState: (): WindowSetting => ({ ...windowState }),
 

@@ -64,6 +64,13 @@ async function track(quest: QuestDto): Promise<void> {
   if (!result.ok) toasts.error(result.error.message)
 }
 
+async function togglePin(quest: QuestDto): Promise<void> {
+  const target = targetOf(quest.id)
+  if (!target) return
+  const result = await window.api.tracking.setPinned({ id: target.id, pinned: !target.pinned })
+  if (!result.ok) toasts.error(result.error.message)
+}
+
 async function untrack(quest: QuestDto): Promise<void> {
   const target = targetOf(quest.id)
   if (!target) return
@@ -160,12 +167,14 @@ const filters: Array<{ id: Filter; label: string }> = [
         :key="quest.id"
         :quest="quest"
         :priority="targetOf(quest.id)?.priority ?? null"
+        :pinned="targetOf(quest.id)?.pinned ?? false"
         :allocation="allocationOf(quest.id)"
         @edit="openEdit(quest)"
         @consume="consumeQuest = quest"
         @set-status="setStatus(quest, $event)"
         @track="track(quest)"
         @untrack="untrack(quest)"
+        @toggle-pin="togglePin(quest)"
         @remove="deleteQuest = quest"
       />
     </div>
@@ -182,6 +191,7 @@ const filters: Array<{ id: Filter; label: string }> = [
         :key="quest.id"
         :quest="quest"
         :priority="targetOf(quest.id)?.priority ?? null"
+        :pinned="targetOf(quest.id)?.pinned ?? false"
         :allocation="undefined"
         :expanded="false"
         @edit="openEdit(quest)"
@@ -189,6 +199,7 @@ const filters: Array<{ id: Filter; label: string }> = [
         @set-status="setStatus(quest, $event)"
         @track="track(quest)"
         @untrack="untrack(quest)"
+        @toggle-pin="togglePin(quest)"
         @remove="deleteQuest = quest"
       />
     </section>

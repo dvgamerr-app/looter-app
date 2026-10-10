@@ -5,6 +5,7 @@ import type { AppContext } from '../context'
 import { AppError } from '../errors'
 import { handle } from '../register'
 import { parseId, parseName, requireRecord } from '../validate'
+import type { OverlayController } from '../../windows/overlay-window'
 
 const toDto = (row: ProfileRow, progress: ProfileDto['progress']): ProfileDto => ({
   id: row.id,
@@ -20,7 +21,7 @@ const toDto = (row: ProfileRow, progress: ProfileDto['progress']): ProfileDto =>
   progress,
 })
 
-export function registerProfileHandlers({ db, repos, settings, pending, gathering }: AppContext): void {
+export function registerProfileHandlers({ db, repos, settings, pending, gathering }: AppContext, overlay: OverlayController): void {
   const snapshot = (): ProfileList => ({
     activeProfileId: settings.getActiveProfileId(),
     profiles: repos.profiles.list().map((row) => toDto(row, gathering.compute(row.id).overall)),
@@ -34,6 +35,8 @@ export function registerProfileHandlers({ db, repos, settings, pending, gatherin
     })()
     // Pending images belong to the previous profile and are dropped (F1-R13).
     pending.clear()
+    // The overlay shows the new profile at once, or hides itself when none is left (F1-R10).
+    overlay.refresh({ profileChanged: true })
   }
 
   const publish = (): ProfileList => {
