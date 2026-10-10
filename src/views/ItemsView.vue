@@ -1,0 +1,11 @@
+<script setup lang="ts">
+import FeaturePlaceholder from '../components/FeaturePlaceholder.vue'
+</script>
+
+<template>
+  <FeaturePlaceholder
+    title="Item Library"
+    :phase="2"
+    description="การจัดการไอเทม รูปภาพ และจำนวนที่มี"
+  />
+</template>
