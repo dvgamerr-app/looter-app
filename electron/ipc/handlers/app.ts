@@ -1,6 +1,7 @@
 import { app, shell } from 'electron'
 import { dataDir } from '../../database'
 import { cleanupOrphanImages } from '../../images/orphans'
+import { checkForUpdate } from '../../updater/check-update'
 import type { AppContext } from '../context'
 import { AppError } from '../errors'
 import { handle } from '../register'
@@ -21,6 +22,8 @@ export function registerAppHandlers({ db, notify, settings }: AppContext): void 
     if (failure) throw new AppError('IO', 'เปิดโฟลเดอร์ข้อมูลไม่สำเร็จ', { reason: failure })
     return null
   })
+
+  handle('app:checkUpdate', () => checkForUpdate())
 
   // Manual cleanup: files nothing refers to are deleted and items whose file is gone lose their image paths.
   handle('app:cleanImages', () => {

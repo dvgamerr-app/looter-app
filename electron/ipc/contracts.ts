@@ -278,6 +278,14 @@ export interface BackupSummary {
   itemCount: number
 }
 
+export interface UpdateInfo {
+  current: string
+  /** Latest published version, or null when no release exists yet. */
+  latest: string | null
+  updateAvailable: boolean
+  url: string
+}
+
 export interface AppInfo {
   name: string
   version: string
@@ -385,6 +393,8 @@ export interface InvokeContract {
   'app:openDataFolder': [void, null]
   /** Manual cleanup of image files and image paths that no longer match (Data Model section 5.4). */
   'app:cleanImages': [void, { removedFiles: number; clearedItems: number }]
+  /** Manual check against the latest GitHub release; the app never updates itself. */
+  'app:checkUpdate': [void, UpdateInfo]
 }
 
 export interface RecipeInput {
@@ -467,7 +477,7 @@ export const INVOKE_CHANNELS = [
   'capture:importFile', 'capture:importPath', 'capture:listPending', 'capture:discard',
   'settings:get', 'settings:update', 'settings:setHotkey', 'settings:resetHotkeys', 'settings:retryHotkeys',
   'backup:pickPath', 'backup:export', 'backup:inspect', 'backup:restore',
-  'app:getInfo', 'app:openDataFolder', 'app:cleanImages',
+  'app:getInfo', 'app:openDataFolder', 'app:cleanImages', 'app:checkUpdate',
 ] as const satisfies readonly InvokeChannel[]
 
 export const EVENT_CHANNELS = [

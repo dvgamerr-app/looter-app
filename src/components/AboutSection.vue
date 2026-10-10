@@ -1,12 +1,25 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import type { AppInfo } from '../../electron/ipc/contracts'
+import type { AppInfo, UpdateInfo } from '../../electron/ipc/contracts'
 
 const info = ref<AppInfo | null>(null)
 onMounted(async () => {
   const result = await window.api.app.getInfo()
   if (result.ok) info.value = result.data
 })
+
+const update = ref<UpdateInfo | null>(null)
+const checking = ref(false)
+const updateError = ref('')
+
+async function checkUpdate(): Promise<void> {
+  checking.value = true
+  updateError.value = ''
+  const result = await window.api.app.checkUpdate()
+  checking.value = false
+  if (result.ok) update.value = result.data
+  else updateError.value = result.error.message
+}
 
 const rows = computed(() =>
   info.value
@@ -59,8 +72,47 @@ const links = [
       </li>
     </ul>
 
-    <p class="text-text-muted">
-      การตรวจสอบอัปเดตยังไม่เปิดใช้: ดาวน์โหลดเวอร์ชันใหม่ด้วยตนเองจากหน้า Releases
-    </p>
+    <section class="flex flex-col gap-2">
+      <div>
+        <button
+          type="button"
+          class="h-(--size-hit) rounded-md bg-surface-3 px-4 hover:bg-border disabled:opacity-40"
+          :disabled="checking"
+          @click="checkUpdate"
+        >
+          ตรวจสอบอัปเดต
+        </button>
+      </div>
+      <p
+        v-if="update"
+        role="status"
+      >
+        <template v-if="update.latest === null">
+          ยังไม่มีเวอร์ชันที่เผยแพร่บน GitHub
+        </template>
+        <template v-else-if="update.updateAvailable">
+          มีเวอร์ชันใหม่ {{ update.latest }} (ตอนนี้ {{ update.current }}) ·
+          <a
+            :href="update.url"
+            class="text-accent-text underline"
+            target="_blank"
+            rel="noopener"
+          >ดาวน์โหลด</a>
+        </template>
+        <template v-else>
+          คุณใช้เวอร์ชันล่าสุดแล้ว ({{ update.current }})
+        </template>
+      </p>
+      <p
+        v-if="updateError"
+        class="text-status-missing"
+        role="alert"
+      >
+        {{ updateError }}
+      </p>
+      <p class="text-caption text-text-muted">
+        แอปไม่อัปเดตตัวเอง ดาวน์โหลดตัวติดตั้งจากหน้า Releases แล้วติดตั้งทับ ข้อมูลจะอยู่ครบ
+      </p>
+    </section>
   </div>
 </template>
