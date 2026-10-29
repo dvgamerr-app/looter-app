@@ -21,7 +21,7 @@ jobs:
           bun-version: 1.4.2
 
       # vue-tsc needs Node.js; Bun alone would silently skip the .vue files.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
 
